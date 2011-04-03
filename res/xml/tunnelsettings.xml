@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+
+<!--
+	<ListPreference 
+		android:key="_interface" 
+		android:entries="@array/interface_list" 
+		android:entryValues="@array/interface_list_values" 
+		android:title="@string/network_interface" 
+		android:dialogTitle="@string/network_interface"/>
+
+	<EditTextPreference 
+		android:key="_domain"
+		android:title="@string/domain_name"
+		android:dialogTitle="@string/domain_name"
+	/>
+	
+	<EditTextPreference 
+		android:key="_password"
+		android:title="@string/password"
+		android:dialogTitle="@string/password"
+		android:password="true"
+	/>
+-->
+</PreferenceScreen>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Hello World, MagicTunnel!</string>
+    <string name="app_name">MagicTunnel</string>
+    <string name="settings">Settings</string>
+    <string name="help">Help</string>
+    <string name="delete">Delete</string>
+    <string name="change_settings">Change settings</string>
+    <string name="connect">Connect</string>
+    <string name="tunnel_mgmt">Tunnel management</string>
+    <string name="available_tunnels">Available tunnels</string>
+    <string-array name="interface_list">
+        <item>Cellular</item>
+        <item>Wifi</item>        
+    </string-array>
+    
+    <string-array name="interface_list_values">
+        <item>CELLULAR</item>
+        <item>WIFI</item>
+    </string-array>
+    
+    <string name="create_profile">Create new profile</string>
+    <string name="enter_profile_name">Enter profile name</string>
+    <string name="profile_name">Profile name</string>
+    
+    <string name="dns_tunnel_settings">DNS tunnel settings</string>
+    <string name="network_interface">Network interface</string>
+    <string name="network_interface_desc">Tunnel through this interface</string>
+    
+    <string name="domain_name">Domain name</string>
+    <string name="domain_name_desc">Tunnel endpoint</string>
+    
+    <string name="password">Password</string>
+    
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    
+    <string name="profile_exists">The chosen profile name already exists</string>
+    <string name="profile_select_interface">Please select the interface to use for the tunnel</string>
+    <string name="profile_enter_domain">Please enter the domain name of the tunnel endpoint</string>
+    <string name="profile_enter_name">Please name the profile</string>
+    
+    <string name="confirm_add_profile_cancellation">Are you sure you want to cancel profile creation?</string>
+    <string name="confirm_edit_profile_cancellation">Are you sure you want to discard changes?</string>
+    
+</resources>
