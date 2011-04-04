@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
 import android.text.InputType;
 import android.view.KeyEvent;
@@ -28,19 +29,9 @@ public class TunnelListPreferences extends PreferenceActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.tunnellist);
-		// Get the custom preference
-		Preference addNewTunnel = (Preference) findPreference("addNewTunnel");
-		addNewTunnel
-				.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-					public boolean onPreferenceClick(Preference preference) {
-						showTunnelPreferences("");
-						return true;
-					}
-
-				});
 		populate();
 	}
-	
+
 	private void showTunnelPreferences(String name) {
 		MagicTunnel app = (MagicTunnel)getApplication();
 		Settings s = app.getSettings();
@@ -49,51 +40,61 @@ public class TunnelListPreferences extends PreferenceActivity {
 		Intent intent = new Intent().setClass(TunnelListPreferences.this, TunnelPreferences.class);
 		startActivity(intent);
 	}
-	
-	private void promptNewProfileName() {
-		AlertDialog.Builder alert = new AlertDialog.Builder(this);
-		alert.setTitle(R.string.create_profile);
-		alert.setMessage(R.string.enter_profile_name);
-		
-		final EditText input = new EditText(this);
-		input.setMaxLines(1);
-		input.setInputType(input.getInputType() & ~InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-		alert.setView(input);
-		
-		
-		//XXX: Check if profile name already exists
-		alert.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int whichButton) {
-			  String value = input.getText().toString().trim();
-			  if (value.length() != 0) {
-				  showTunnelPreferences(value);				  
-			  }
-			  }
-			});
 
-		alert.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-			  public void onClick(DialogInterface dialog, int whichButton) {
-			    dialog.cancel();
-			  }
-			});
+	private Preference createCategory(int titleId) {
+		Preference pref = new PreferenceCategory(this);
+		pref.setTitle(titleId);
+		return pref;
+	}
 
-		alert.show();
+	private Preference createAddNewTunnel() {
+		Preference pref = new Preference(this);
+		pref.setTitle(R.string.add_new_tunnel);
+		pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+			public boolean onPreferenceClick(Preference preference) {
+				showTunnelPreferences("");
+				return true;
+			}
+
+		});
+		return pref;
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		populate();
 	}
 
 	private void populate() {
+		PreferenceScreen screen = getPreferenceScreen();
+		screen.removeAll();
+
+		screen.addPreference(createCategory(R.string.tunnel_mgmt));
+
+		Preference pref = createAddNewTunnel();
+		screen.addPreference(pref);
+
+		screen.addPreference(createCategory(R.string.available_tunnels));
+
 		MagicTunnel app = (MagicTunnel)getApplication();
 		Settings s = app.getSettings();
 		List<String> profiles = s.getProfileNames();
-		
-		PreferenceScreen screen = getPreferenceScreen();
-		
+
 		for (String p:profiles) {
-			Preference pref = new Preference(this);
+			pref = new Preference(this);
 			pref.setTitle(p);
-			pref.setKey(Profile.PROFILE_PREFIX + p);
+			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					showTunnelPreferences(preference.getTitle().toString());
+					return true;
+				}
+			});
+
 			screen.addPreference(pref);
 		}
 		
 	}
-	
+
 }
