@@ -154,11 +154,12 @@ public class TunnelPreferences extends PreferenceActivity {
 	}
 	
 	private EditTextPreference createNamePreference() {
-		EditTextPreference prefDomain = new EditTextPreference(this);
-//		prefDomain.setKey(prefixedName + Profile.PROFILE_DOMAIN);
-		prefDomain.setTitle(R.string.profile_name);
-		prefDomain.setDialogTitle(R.string.profile_name);
-		prefDomain.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {			
+		EditTextPreference prefName = new EditTextPreference(this);
+		prefName.setTitle(R.string.profile_name);
+		prefName.setDialogTitle(R.string.profile_name);
+		prefName.getEditText().setInputType(
+				prefName.getEditText().getInputType() & ~InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+		prefName.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
 			@Override
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				m_name = ((String) newValue).trim();
@@ -166,7 +167,7 @@ public class TunnelPreferences extends PreferenceActivity {
 				return true;
 			}
 		});
-		return prefDomain;
+		return prefName;
 	}
 	
 	private ListPreference createInterfacePreference() {
@@ -179,8 +180,17 @@ public class TunnelPreferences extends PreferenceActivity {
 		prefInterface.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {			
 			@Override
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				m_interface = ((String) newValue).trim();
-				preference.setSummary(m_interface);
+				CharSequence [] seq = ((ListPreference)preference).getEntryValues();
+				CharSequence [] val = ((ListPreference)preference).getEntries();
+				m_interface = "";
+				int i=0;
+				for (CharSequence s:seq) {
+					if (s.toString().equals(newValue)) {
+						preference.setSummary(val[i].toString());
+						m_interface = s.toString();
+					}
+					++i;
+				}
 				return true;
 			}
 		});
@@ -193,6 +203,8 @@ public class TunnelPreferences extends PreferenceActivity {
 //		prefDomain.setKey(prefixedName + Profile.PROFILE_DOMAIN);
 		prefDomain.setTitle(R.string.domain_name);
 		prefDomain.setDialogTitle(R.string.domain_name);
+		prefDomain.getEditText().setInputType(
+				prefDomain.getEditText().getInputType() & ~InputType.TYPE_TEXT_FLAG_MULTI_LINE);
 		prefDomain.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {			
 			@Override
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -212,6 +224,14 @@ public class TunnelPreferences extends PreferenceActivity {
                 InputType.TYPE_TEXT_VARIATION_PASSWORD);
 		prefPassword.getEditText().setTransformationMethod(
                 new PasswordTransformationMethod());
+		prefPassword.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+			@Override
+			public boolean onPreferenceChange(Preference preference, Object newValue) {
+				m_password = ((String) newValue);
+				return true;
+			}
+		});
+
 		return prefPassword;
 	}
 	
