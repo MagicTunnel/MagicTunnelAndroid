@@ -70,11 +70,12 @@ public class Settings {
 		return m_profiles.get(name);
 	}
 	
-	public boolean rename(String oldName, String newName) {
+	public boolean rename(Context ctx, String oldName, String newName) {
 		Profile profile = m_profiles.get(oldName);
 		if (profile == null) {
 			return false;
 		}
+		profile.deleteProfile(ctx);
 		m_profiles.remove(oldName);
 		m_profiles.put(newName, profile);
 		profile.setName(newName);
@@ -86,6 +87,11 @@ public class Settings {
 			throw new RuntimeException("Profile already exists");
 		}
 		m_profiles.put(profile.getName(), profile);
+	}
+	
+	public void deleteProfile(Profile profile, Context ctx) {
+		profile.deleteProfile(ctx);
+		m_profiles.remove(profile.getName());
 	}
 }
 

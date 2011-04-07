@@ -46,5 +46,6 @@
     
     <string name="confirm_add_profile_cancellation">Are you sure you want to cancel profile creation?</string>
     <string name="confirm_edit_profile_cancellation">Are you sure you want to discard changes?</string>
+    <string name="confirm_profile_deletion">Are you sure you want to delete the profile?</string>
     
 </resources>

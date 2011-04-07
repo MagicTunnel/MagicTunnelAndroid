@@ -83,7 +83,7 @@ public class TunnelPreferences extends PreferenceActivity {
 		
 		m_interface = prof.getInterface().toString();
 		m_prefInterface.setValue(prof.getInterface().toString());
-		m_prefInterface.setSummary(prof.getDomainName());
+		m_prefInterface.setSummary(getInterfaceSummary(m_prefInterface, prof.getInterface()));
 		
 		m_password = prof.getPassword();
 		m_prefPassword.getEditText().setText(prof.getPassword());
@@ -120,8 +120,9 @@ public class TunnelPreferences extends PreferenceActivity {
 		if (m_new) {
 			m_profile.setName(m_name);
 			m_settings.addProfile(m_profile);
+			m_profile.saveProfile(this);
 		}else {
-			m_settings.rename(m_profile.getName(), m_name);
+			m_settings.rename(this, m_profile.getName(), m_name);
 		}
 	}
 	
@@ -170,6 +171,19 @@ public class TunnelPreferences extends PreferenceActivity {
 		return prefName;
 	}
 	
+	private String getInterfaceSummary(Preference preference, Interfaces key) {
+		CharSequence [] seq = ((ListPreference)preference).getEntryValues();
+		CharSequence [] val = ((ListPreference)preference).getEntries();
+		int i=0;
+		for (CharSequence s:seq) {
+			if (s.toString().equals(key.toString())) {
+				return val[i].toString();
+			}
+			++i;
+		}
+		return "";
+	}
+	
 	private ListPreference createInterfacePreference() {
 		ListPreference prefInterface = new ListPreference(this);
 		//prefInterface.setKey(prefixedName + Profile.PROFILE_INTERFACE);
@@ -180,17 +194,8 @@ public class TunnelPreferences extends PreferenceActivity {
 		prefInterface.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {			
 			@Override
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				CharSequence [] seq = ((ListPreference)preference).getEntryValues();
-				CharSequence [] val = ((ListPreference)preference).getEntries();
-				m_interface = "";
-				int i=0;
-				for (CharSequence s:seq) {
-					if (s.toString().equals(newValue)) {
-						preference.setSummary(val[i].toString());
-						m_interface = s.toString();
-					}
-					++i;
-				}
+				m_interface = (String)newValue;
+				preference.setSummary(getInterfaceSummary(preference, Interfaces.valueOf(m_interface)));
 				return true;
 			}
 		});

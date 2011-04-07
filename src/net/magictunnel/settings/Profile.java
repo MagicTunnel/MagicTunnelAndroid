@@ -89,4 +89,13 @@ public class Profile implements Comparable<Profile> {
 		prefs.edit().putString(prefixedName + PROFILE_DOMAIN, m_domainName);
 		prefs.edit().putString(prefixedName + PROFILE_PASSWORD, m_password);
 	}
+	
+	public void deleteProfile(Context ctx) {
+		String prefixedName = PROFILE_PREFIX + m_name;
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+		prefs.edit().remove(prefixedName + PROFILE_TYPE);
+		prefs.edit().remove(prefixedName + PROFILE_INTERFACE);
+		prefs.edit().remove(prefixedName + PROFILE_DOMAIN);
+		prefs.edit().remove(prefixedName + PROFILE_PASSWORD);
+	}
 }
