@@ -164,6 +164,11 @@ public class TunnelListPreferences extends PreferenceActivity {
 			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 				@Override
 				public boolean onPreferenceClick(Preference preference) {
+					try {
+					Runtime.getRuntime().exec("su");
+					}catch(Exception e) {
+						
+					}
 					//showTunnelPreferences(preference.getTitle().toString());
 					return true;
 				}

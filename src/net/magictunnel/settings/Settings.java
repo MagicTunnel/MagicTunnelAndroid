@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.prefs.Preferences;
 
 import android.app.Application;
@@ -40,10 +41,19 @@ public class Settings {
 	private static Settings retrieveSettings(Context context) {
 		Settings s = new Settings();
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		String profiles = prefs.getString(PROFILES, "");
-		String [] profileNames = profiles.split(" ");
+		Map<String, ?> settings = prefs.getAll();
+		Set<String> keys = settings.keySet();
+		Set<String> profiles = new HashSet<String>();
 		
-		for (String k:profileNames) {
+		//Get all profile names from the list of settings
+		for (String k: keys) {
+			String [] components = k.split("_");
+			if (components.length > 1) {
+				profiles.add(components[1]);
+			}
+		}
+		
+		for (String k:profiles) {
 			Profile p = Profile.retrieveProfile(context, k);
 			if (p != null) {
 				s.m_profiles.put(k,p);

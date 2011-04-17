@@ -1,7 +1,12 @@
-package net.magictunnel;
+package net.magictunnel.old;
 
 import java.util.ArrayList;
 import java.util.TreeSet;
+
+import net.magictunnel.R;
+import net.magictunnel.R.id;
+import net.magictunnel.R.layout;
+import net.magictunnel.R.menu;
 
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;

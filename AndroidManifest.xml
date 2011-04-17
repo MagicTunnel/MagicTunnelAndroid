@@ -14,7 +14,7 @@
             </intent-filter>
         </activity>
         
-        <activity android:name="TunnelListActivity"
+        <activity android:name="old.TunnelListActivity"
                   android:label="@string/settings">
         </activity>
 
