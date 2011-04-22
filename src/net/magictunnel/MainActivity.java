@@ -18,6 +18,7 @@ public class MainActivity extends TabActivity {
 
 	    // Create an Intent to launch an Activity for the tab (to be reused)
 	    intent = new Intent().setClass(this, TunnelListPreferences.class);
+	    //intent = new Intent().setClass(this, SystemComponentChecklist.class);
 
 	    // Initialize a TabSpec for each tab and add it to the TabHost
 	    spec = tabHost.newTabSpec("settings").setIndicator("Tunnels")
