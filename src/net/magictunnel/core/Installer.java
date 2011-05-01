@@ -103,6 +103,13 @@ public class Installer {
 		}
 		
 		File script = new File(m_context.getFilesDir(), INSTALL_SCRIPT);
-		return Commands.runScriptAsRoot(script.toString());		
+		Commands.runScriptAsRoot(script.toString());
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return iodineInstalled();
 	}	
 }

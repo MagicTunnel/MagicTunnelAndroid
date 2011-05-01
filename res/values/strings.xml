@@ -61,4 +61,15 @@
     <string name="checklist_nok">Required components missing</string>
     <string name="checklist_nok_subtitle">Tap here for help</string>
     
+    <!--  IodineException messages -->
+    <string name="iodineexception_invalid_interface">Invalid interface specified</string>
+
+    <!-- Iodine messages -->
+    <string name="iodine_no_connectivity">Cannot establish tunnel</string>
+    <string name="iodine_check_dns">It is possible that the access point does not allow external DNS traffic.
+    Check the log for more information.</string>
+    <string name="iodine_enable_mobile">Please activate the mobile connection</string>
+    <string name="iodine_enable_wifi">Please activate the wifi connection</string>
+    <string name="iodine_notify_connected">DNS tunnel established</string>
+
 </resources>

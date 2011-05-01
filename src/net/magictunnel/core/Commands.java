@@ -3,20 +3,40 @@ package net.magictunnel.core;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 
 import android.util.Log;
 
 public class Commands {
 	public static final String SU = "su";
 	public static final String PATH = "PATH";
-	
+
+	Runtime m_runtime = Runtime.getRuntime();
+	StringBuilder m_stdOut = new StringBuilder();
+	StringBuilder m_stdErr = new StringBuilder();
+	OutputStreamWriter m_osw = null;
+	Process m_proc = null;
+
+	public StringBuilder getStdOut() {
+		return m_stdOut;
+	}
+
+	public StringBuilder getStdErr() {
+		return m_stdErr;
+	}
+
+	public Commands() {
+
+	}
+
 	public static boolean checkRoot() {
 		String paths = System.getenv(PATH);
-		String [] pathComponents = paths.split(":");
-		
-		for (String path:pathComponents) {
+		String[] pathComponents = paths.split(":");
+
+		for (String path : pathComponents) {
 			File f = new File(path, SU);
 			if (f.exists()) {
 				return true;
@@ -25,76 +45,58 @@ public class Commands {
 		return false;
 	}
 
-	
-	public static boolean runCommand(String command) {
-		try {
-		    Process p = Runtime.getRuntime().exec(command);
-		    return true;
-		} catch (Exception e) {
-			return false;
-		}
+	public static void runScriptAsRoot(String scriptFile) {
+		Commands cmds = new Commands();
+		cmds.runCommandAsRoot("sh " + scriptFile);
 	}
-	
-	public static boolean runCommand(String command, String [] env) {
+
+	public void runCommand(String command) {
 		try {
-		    Process p = Runtime.getRuntime().exec(command, env);
-		    return true;
-		} catch (Exception e) {
-			return false;
+			m_proc = m_runtime.exec(command);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
-	public static boolean runScriptAsRoot(String scriptFile) {
-		OutputStreamWriter osw = null;
-		StringBuilder sbstdOut = new StringBuilder();
-	    StringBuilder sbstdErr = new StringBuilder();
-	    Process proc=null;
-	    Runtime runtime = Runtime.getRuntime();
-	    
-	    try {
-	        proc = runtime.exec("su");
-	        osw = new OutputStreamWriter(proc.getOutputStream());
-	        osw.write("sh " + scriptFile);
-	        osw.flush();
-	        osw.close();
-	    } catch (IOException ex) {
-	        ex.printStackTrace();
-	    } finally {
-	        if (osw != null) {
-	            try {
-	                osw.close();
-	            } catch (IOException e) {
-	                e.printStackTrace();                    
-	            }
-	        }
-	    }
-	    try {
-	        if (proc != null)
-	            proc.waitFor();
-	    } catch (InterruptedException e) {
-	        e.printStackTrace();
-	    }
-	    sbstdOut.append(new BufferedReader(new InputStreamReader(proc.getInputStream())));
-	    sbstdErr.append(new BufferedReader(new InputStreamReader(proc.getErrorStream())));
-	
-	    Log.i("Commands", sbstdOut.toString());
-	    Log.i("Commands", sbstdErr.toString());
-	    
-	    return true;
-	//	return runCommand(SU + " -c \"sh " + scriptFile + "\"" );
+	public void runCommandAsRoot(String command) {
+
+		try {
+			m_proc = m_runtime.exec("su");
+			m_osw = new OutputStreamWriter(m_proc.getOutputStream());
+
+			m_osw.write(command);
+			m_osw.flush();
+			m_osw.close();
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			if (m_osw != null) {
+				try {
+					m_osw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
-	
-	public static boolean requestRoot() {
-		int uid = android.os.Process.myUid(); 
-		if (uid == 0) {
-			return true;
+
+	public Process getProcess() {
+		return m_proc;
+	}
+
+	private StringBuilder streamToString(InputStream is) {
+		BufferedReader in = new BufferedReader(new InputStreamReader(is));
+		StringBuilder out = new StringBuilder();
+		try {
+			String l;
+			while ((l = in.readLine()) != null) {
+				out.append(l + "\n");
+			}
+		} catch (Exception e) {
+
 		}
-		
-		if (runCommand(SU) == false) {
-			return false;
-		}
-		
-		uid = android.os.Process.myUid();
-		return uid == 0;
+		return out;
 	}
 }

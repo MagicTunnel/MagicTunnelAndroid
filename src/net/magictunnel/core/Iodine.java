@@ -1,0 +1,187 @@
+package net.magictunnel.core;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Resources;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
+import android.widget.Toast;
+
+import net.magictunnel.MainActivity;
+import net.magictunnel.R;
+import net.magictunnel.Utils;
+import net.magictunnel.settings.Interfaces;
+import net.magictunnel.settings.Profile;
+
+public class Iodine extends AsyncTask<Void, String, Boolean> {
+	private String m_password;
+	private String m_domain;
+	private Interfaces m_interface;
+	
+	private Commands m_cmds;
+	private Context m_context;
+	private ProgressDialog m_progress;
+	private StringBuffer m_messages = new StringBuffer();
+	
+	public Iodine(Context context, Profile profile) {
+		m_password = profile.getPassword();
+		m_domain = profile.getDomainName();
+		m_interface = profile.getInterface();
+		m_context = context;
+		m_cmds = new Commands();		
+	}
+	
+	/**
+	 * Verifies that the dns0 interface is up. It indicates that
+	 * the dns tunnel is up and running.
+	 * @return
+	 */
+	public boolean checkInterface() {
+		m_cmds.runCommandAsRoot("ifconfig dns0");
+		//pollProgress(m_cmds.getProcess().getErrorStream());
+		try {
+			m_cmds.getProcess().waitFor();
+		} catch (InterruptedException e) {
+
+		}
+		return m_cmds.getProcess().exitValue() == 0;
+	}
+	
+	/**
+	 * 
+	 * @return Whether WIFI or Data connection is enabled
+	 */
+	public boolean checkConnectivity() {
+		ConnectivityManager mgr = (ConnectivityManager)m_context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo info;
+		int type=-1;
+		
+		if (m_interface.equals(Interfaces.WIFI)) {
+			type = ConnectivityManager.TYPE_WIFI;
+		}else if (m_interface.equals(Interfaces.CELLULAR)) {
+			type = ConnectivityManager.TYPE_MOBILE;
+		}else {
+			return false;
+		}
+		
+		info = mgr.getNetworkInfo(type);
+		if (info != null) {
+			return info.isConnected();
+		}
+		return false;
+	}
+	
+	private StringBuilder buildCommandLine() throws IodineException {
+		if (m_interface == null) {
+			throw new IodineException(R.string.iodineexception_invalid_interface);
+		}
+		
+		
+		StringBuilder cmdBuilder = new StringBuilder();
+		cmdBuilder.append("iodine");
+		
+		if (m_password != null) {
+			cmdBuilder.append(" -P ");
+			cmdBuilder.append(m_password);
+		}
+		
+		cmdBuilder.append(" -d dns0 ");
+		cmdBuilder.append(m_domain);
+		return cmdBuilder;
+	}
+	
+	private void pollProgress(InputStream is) {
+		BufferedReader in = new BufferedReader(new InputStreamReader(is));
+		try {
+			String l;
+			while ((l = in.readLine()) != null) {
+				publishProgress(l);
+			}
+		}catch(Exception e) {
+			return;
+		}		
+	}
+	
+	private void launch() throws IodineException, InterruptedException {
+		publishProgress("Killing previous instance of iodine...");
+		m_cmds.runCommandAsRoot("killall -9 iodine > /dev/null");
+		Thread.sleep(500);
+				
+		m_cmds.runCommandAsRoot(buildCommandLine().toString());		
+		pollProgress(m_cmds.getProcess().getErrorStream());
+	}
+	
+	
+	@Override
+	protected void onPreExecute() {
+		super.onPreExecute();
+		
+		if (!checkConnectivity()) {
+			Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
+					m_interface.equals(Interfaces.WIFI) ?
+					R.string.iodine_enable_wifi:R.string.iodine_enable_mobile);
+			cancel(true);
+			return;
+		}
+		
+		m_progress = new ProgressDialog(m_context);
+		m_progress.setCancelable(false);
+		m_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+		m_progress.setMessage("Connecting...");
+		m_progress.show();		
+	}
+
+	@Override
+	protected Boolean doInBackground(Void... arg0) {
+		try {
+			launch();
+			Thread.sleep(1000);
+		}catch(IodineException e) {
+			Utils.showErrorMessage(m_context, m_context.getString(e.getMessageId()));
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return true;
+	}
+	
+	private void showConnectionToast(int messageId) {
+		String text = m_context.getString(messageId);
+		int duration = Toast.LENGTH_LONG;
+
+		Toast toast = Toast.makeText(m_context, text, duration);
+		toast.show();
+	}
+	
+	@Override
+	protected void onPostExecute(Boolean result) {
+		super.onPostExecute(result);
+		m_progress.cancel();
+		
+		if (!checkInterface()) {
+			Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
+					R.string.iodine_check_dns);
+			return;
+		}
+		
+		showConnectionToast(R.string.iodine_notify_connected);
+	}
+	
+	@Override
+	protected void onProgressUpdate(String... values) {
+		super.onProgressUpdate(values);
+		m_messages.append(values[0]);
+		m_messages.append("\n");
+		m_progress.setMessage(m_messages.toString());
+	}
+	
+}

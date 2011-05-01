@@ -1,1 +1,4 @@
 gen
+bin
+proguard.cfg
+*.apk
