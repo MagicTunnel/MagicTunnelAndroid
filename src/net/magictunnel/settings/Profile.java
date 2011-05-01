@@ -1,7 +1,5 @@
 package net.magictunnel.settings;
 
-import java.security.DomainCombiner;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;

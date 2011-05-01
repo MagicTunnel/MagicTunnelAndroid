@@ -85,10 +85,14 @@ public class Settings {
 		if (profile == null) {
 			return false;
 		}
+		if (oldName.equals(newName)) {
+			return false;
+		}
 		profile.deleteProfile(ctx);
 		m_profiles.remove(oldName);
 		m_profiles.put(newName, profile);
 		profile.setName(newName);
+		profile.saveProfile(ctx);
 		return true;
 	}
 	

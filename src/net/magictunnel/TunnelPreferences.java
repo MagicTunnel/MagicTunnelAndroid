@@ -121,8 +121,10 @@ public class TunnelPreferences extends PreferenceActivity {
 			m_profile.setName(m_name);
 			m_settings.addProfile(m_profile);
 			m_profile.saveProfile(this);
-		}else {
+		}else if (!m_profile.getName().equals(m_name)){
 			m_settings.rename(this, m_profile.getName(), m_name);
+		}else {
+			m_profile.saveProfile(this);
 		}
 	}
 	
