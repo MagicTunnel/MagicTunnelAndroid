@@ -9,9 +9,15 @@
     <string name="delete">Delete</string>
     <string name="change_settings">Change settings</string>
     <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    
+    
     <string name="tunnel_mgmt">Tunnel management</string>
     <string name="add_new_tunnel">Add new tunnel</string>
     <string name="available_tunnels">Available tunnels</string>
+    <string name="connected_tunnel">Connected</string>
+    
+    
     <string-array name="interface_list">
         <item>Cellular</item>
         <item>Wifi</item>        
@@ -71,5 +77,6 @@
     <string name="iodine_enable_mobile">Please activate the mobile connection</string>
     <string name="iodine_enable_wifi">Please activate the wifi connection</string>
     <string name="iodine_notify_connected">DNS tunnel established</string>
+    <string name="iodine_notify_disconnected">DNS tunnel disconnected</string>
 
 </resources>

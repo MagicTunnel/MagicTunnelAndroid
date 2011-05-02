@@ -5,45 +5,60 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import net.magictunnel.R;
+import net.magictunnel.Utils;
+import net.magictunnel.settings.Interfaces;
+import net.magictunnel.settings.Profile;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
-import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.widget.Toast;
 
-import net.magictunnel.MainActivity;
-import net.magictunnel.R;
-import net.magictunnel.Utils;
-import net.magictunnel.settings.Interfaces;
-import net.magictunnel.settings.Profile;
-
-public class Iodine extends AsyncTask<Void, String, Boolean> {
+public class Iodine {
+	private String m_profileName;
 	private String m_password;
 	private String m_domain;
 	private Interfaces m_interface;
 	
 	private Commands m_cmds;
 	private Context m_context;
-	private ProgressDialog m_progress;
-	private StringBuffer m_messages = new StringBuffer();
 	
-	public Iodine(Context context, Profile profile) {
+	private ArrayList<ITunnelStatusListener> m_listeners = new ArrayList<ITunnelStatusListener>(); 
+	
+	public Iodine() {
+		m_cmds = new Commands();
+	}
+	
+	public Iodine(Profile profile) {
+		setProfile(profile);
+		m_cmds = new Commands();		
+	}
+	
+	public void setProfile(Profile profile) {
 		m_password = profile.getPassword();
 		m_domain = profile.getDomainName();
 		m_interface = profile.getInterface();
-		m_context = context;
-		m_cmds = new Commands();		
+		m_profileName = profile.getName();
+	}
+	
+	public void setContext(Context ctx) {
+		m_context = ctx;
+	}
+	
+	
+	public String getProfileName() {
+		return m_profileName;
+	}
+	
+	public boolean isIodineRunning() {
+		return Commands.isProgramRunning("iodine");
 	}
 	
 	/**
 	 * Verifies that the dns0 interface is up. It indicates that
-	 * the dns tunnel is up and running.
+	 * the DNS tunnel is up and running.
 	 * @return
 	 */
 	public boolean checkInterface() {
@@ -100,58 +115,17 @@ public class Iodine extends AsyncTask<Void, String, Boolean> {
 		return cmdBuilder;
 	}
 	
-	private void pollProgress(InputStream is) {
-		BufferedReader in = new BufferedReader(new InputStreamReader(is));
-		try {
-			String l;
-			while ((l = in.readLine()) != null) {
-				publishProgress(l);
-			}
-		}catch(Exception e) {
-			return;
-		}		
-	}
 	
-	private void launch() throws IodineException, InterruptedException {
-		publishProgress("Killing previous instance of iodine...");
+	public void disconnect() {
 		m_cmds.runCommandAsRoot("killall -9 iodine > /dev/null");
-		Thread.sleep(500);
-				
-		m_cmds.runCommandAsRoot(buildCommandLine().toString());		
-		pollProgress(m_cmds.getProcess().getErrorStream());
-	}
-	
-	
-	@Override
-	protected void onPreExecute() {
-		super.onPreExecute();
-		
-		if (!checkConnectivity()) {
-			Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
-					m_interface.equals(Interfaces.WIFI) ?
-					R.string.iodine_enable_wifi:R.string.iodine_enable_mobile);
-			cancel(true);
-			return;
-		}
-		
-		m_progress = new ProgressDialog(m_context);
-		m_progress.setCancelable(false);
-		m_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		m_progress.setMessage("Connecting...");
-		m_progress.show();		
-	}
-
-	@Override
-	protected Boolean doInBackground(Void... arg0) {
 		try {
-			launch();
-			Thread.sleep(1000);
-		}catch(IodineException e) {
-			Utils.showErrorMessage(m_context, m_context.getString(e.getMessageId()));
-		}catch(Exception e) {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return true;
+		showConnectionToast(R.string.iodine_notify_disconnected);
+		broadcastOnTunnelDisconnect(m_profileName);
 	}
 	
 	private void showConnectionToast(int messageId) {
@@ -161,27 +135,129 @@ public class Iodine extends AsyncTask<Void, String, Boolean> {
 		Toast toast = Toast.makeText(m_context, text, duration);
 		toast.show();
 	}
+
 	
-	@Override
-	protected void onPostExecute(Boolean result) {
-		super.onPostExecute(result);
-		m_progress.cancel();
-		
-		if (!checkInterface()) {
-			Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
-					R.string.iodine_check_dns);
+	public void registerListener(ITunnelStatusListener listener) {
+		if (m_listeners.contains(listener)) {
 			return;
 		}
-		
-		showConnectionToast(R.string.iodine_notify_connected);
+		m_listeners.add(listener);
 	}
 	
-	@Override
-	protected void onProgressUpdate(String... values) {
-		super.onProgressUpdate(values);
-		m_messages.append(values[0]);
-		m_messages.append("\n");
-		m_progress.setMessage(m_messages.toString());
+	public void unregisterListener(ITunnelStatusListener listener) {
+		m_listeners.remove(listener);
 	}
+	
+	private void broadcastOnTunnelConnect(String name) {
+		for (ITunnelStatusListener l:m_listeners) {
+			l.onTunnelConnect(name);
+		}
+	}
+	
+	private void broadcastOnTunnelDisconnect(String name) {
+		for (ITunnelStatusListener l:m_listeners) {
+			l.onTunnelDisconnet(name);
+		}
+	}
+	
+	
+	/**
+	 * An AsyncTask can be used only once. Therefore, we have
+	 * to recreate a new one on each use.
+	 * @return
+	 */
+	public LauncherTask getLauncher() {
+		return new LauncherTask();
+	}
+	
+	public class LauncherTask extends AsyncTask<Void, String, Boolean> {
+	
+		private ProgressDialog m_progress;
+		private StringBuffer m_messages = new StringBuffer();
+		
+		private LauncherTask() {
+			
+		}
+		
+		private void launch() throws IodineException, InterruptedException {
+			publishProgress("Killing previous instance of iodine...");
+			m_cmds.runCommandAsRoot("killall -9 iodine > /dev/null");
+			Thread.sleep(500);
+					
+			m_cmds.runCommandAsRoot(buildCommandLine().toString());		
+			pollProgress(m_cmds.getProcess().getErrorStream());
+		}
+
+		
+		private void pollProgress(InputStream is) {
+			BufferedReader in = new BufferedReader(new InputStreamReader(is));
+			try {
+				String l;
+				while ((l = in.readLine()) != null) {
+					publishProgress(l);
+				}
+			}catch(Exception e) {
+				return;
+			}		
+		}
+
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			
+			if (!checkConnectivity()) {
+				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
+						m_interface.equals(Interfaces.WIFI) ?
+						R.string.iodine_enable_wifi:R.string.iodine_enable_mobile);
+				cancel(true);
+				return;
+			}
+			
+			m_progress = new ProgressDialog(m_context);
+			m_progress.setCancelable(false);
+			m_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+			m_progress.setMessage("Connecting...");
+			m_progress.show();		
+		}
+	
+		@Override
+		protected Boolean doInBackground(Void... arg0) {
+			try {
+				launch();
+				Thread.sleep(1000);
+			}catch(IodineException e) {
+				Utils.showErrorMessage(m_context, m_context.getString(e.getMessageId()));
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			return true;
+		}
+		
+		@Override
+		protected void onPostExecute(Boolean result) {
+			super.onPostExecute(result);
+			m_progress.cancel();
+			
+			if (!checkInterface()) {
+				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
+						R.string.iodine_check_dns);
+				return;
+			}
+			
+			showConnectionToast(R.string.iodine_notify_connected);
+			broadcastOnTunnelConnect(m_profileName);
+		}
+		
+		@Override
+		protected void onProgressUpdate(String... values) {
+			super.onProgressUpdate(values);
+			m_messages.append(values[0]);
+			m_messages.append("\n");
+			m_progress.setMessage(m_messages.toString());
+		}
+	
+	}
+
 	
 }

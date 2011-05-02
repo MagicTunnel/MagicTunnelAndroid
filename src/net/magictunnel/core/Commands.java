@@ -86,17 +86,22 @@ public class Commands {
 		return m_proc;
 	}
 
-	private StringBuilder streamToString(InputStream is) {
-		BufferedReader in = new BufferedReader(new InputStreamReader(is));
-		StringBuilder out = new StringBuilder();
+	public static boolean isProgramRunning(String name) {
+		Commands cmds = new Commands();
+		cmds.runCommandAsRoot("ps");
+		
+		BufferedReader in = new BufferedReader(new InputStreamReader(cmds.getProcess().getInputStream()));
 		try {
 			String l;
 			while ((l = in.readLine()) != null) {
-				out.append(l + "\n");
+				if (l.contains(name)) {
+					return true;
+				}
 			}
-		} catch (Exception e) {
-
+		}catch(Exception e) {
+			return false;
 		}
-		return out;
+		
+		return false;
 	}
 }

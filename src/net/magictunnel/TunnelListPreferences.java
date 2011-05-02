@@ -2,36 +2,28 @@ package net.magictunnel;
 
 import java.util.List;
 
+import net.magictunnel.core.ITunnelStatusListener;
 import net.magictunnel.core.Iodine;
-import net.magictunnel.core.IodineException;
 import net.magictunnel.settings.Profile;
 import net.magictunnel.settings.Settings;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
-import android.text.InputType;
 import android.view.ContextMenu;
-import android.view.KeyEvent;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnKeyListener;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
-public class TunnelListPreferences extends PreferenceActivity {
+public class TunnelListPreferences extends PreferenceActivity implements ITunnelStatusListener {
 	private static final int CONFIRM_DELETE_DIALOG_ID = 0;
 	private int m_firstTunnelIndex = 0;
 
@@ -42,9 +34,22 @@ public class TunnelListPreferences extends PreferenceActivity {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.tunnellist);
 		registerForContextMenu(getListView());
-		populateScreen();
+		
+		MagicTunnel mt = ((MagicTunnel) getApplication());
+		Iodine iod = mt.getIodine();
+		iod.registerListener(this);
+		
+		populateScreen();		
 	}
 
+	@Override
+	protected void onDestroy() {
+		MagicTunnel mt = ((MagicTunnel) getApplication());
+		Iodine iod = mt.getIodine();
+		iod.unregisterListener(this);
+		super.onDestroy();
+	}
+	
 	private void populateScreen() {
 		PreferenceScreen screen = getPreferenceScreen();
 		screen.removeAll();
@@ -89,6 +94,9 @@ public class TunnelListPreferences extends PreferenceActivity {
 		return pref;
 	}
 
+	/**
+	 * Shows a menu when the user long-pressed a tunnel entry
+	 */
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
@@ -99,9 +107,15 @@ public class TunnelListPreferences extends PreferenceActivity {
 		if (profile == null) {
 			return;
 		}
+
 		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.settingsmanager, menu);
-		menu.setHeaderTitle(profile);
+
+		if (getConnectedProfile().equals(profile)) {
+			inflater.inflate(R.menu.tunnellistpref_disconnect, menu);
+		}else {
+			inflater.inflate(R.menu.tunnellistpref_context, menu);
+		}
+		menu.setHeaderTitle(profile);				
 	}
 
 	private String getSelectedProfile(AdapterContextMenuInfo menuInfo) {
@@ -115,16 +129,25 @@ public class TunnelListPreferences extends PreferenceActivity {
 		return pref.getTitle().toString();
 	}
 
+	private void doDisconnect() {
+		MagicTunnel mt = ((MagicTunnel) getApplication());
+		Iodine iod = mt.getIodine();
+		iod.disconnect();
+	}
+	
 	private void doConnect(String profileName) {
-		Settings s = ((MagicTunnel) getApplication()).getSettings();
+		MagicTunnel mt = ((MagicTunnel) getApplication()); 
+		Settings s = mt.getSettings();
 		Profile p = s.getProfile(profileName);
 
 		if (p == null) {
 			return;
 		}
 
-		Iodine iod = new Iodine(this, p);
-		iod.execute(null);
+		Iodine iod = mt.getIodine();
+		iod.setProfile(p);
+		iod.setContext(this);
+		iod.getLauncher().execute(null);		
 	}
 
 	@Override
@@ -138,6 +161,10 @@ public class TunnelListPreferences extends PreferenceActivity {
 
 		switch (item.getItemId()) {
 
+		case R.id.cfg_menu_disconnect:
+			doDisconnect();
+			return true;
+			
 		case R.id.cfg_menu_connect:
 			doConnect(profileName);
 			return true;
@@ -162,11 +189,26 @@ public class TunnelListPreferences extends PreferenceActivity {
 		populateTunnels();
 	}
 
+	private String getConnectedProfile() {
+		MagicTunnel app = (MagicTunnel) getApplication();
+		Iodine iod = app.getIodine();
+		
+		boolean isConnected = iod.isIodineRunning();
+		String activeProfile = iod.getProfileName();
+		
+		if (!isConnected || activeProfile == null) {
+			return "";
+		}
+		return activeProfile;
+	}
+	
 	private void populateTunnels() {
 		Preference pref;
 		PreferenceScreen screen = getPreferenceScreen();
 		MagicTunnel app = (MagicTunnel) getApplication();
-
+		String activeProfile = getConnectedProfile();
+		
+		
 		// Remove old tunnels from the list
 		while (screen.getPreferenceCount() > m_firstTunnelIndex) {
 			screen.removePreference(screen.getPreference(m_firstTunnelIndex));
@@ -179,13 +221,19 @@ public class TunnelListPreferences extends PreferenceActivity {
 		for (String p : profiles) {
 			pref = new Preference(this);
 			pref.setTitle(p);
-			pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					doConnect(preference.getTitle().toString());
-					return true;
-				}
-			});
+
+			if (activeProfile.equals(p)) {
+				pref.setSummary(R.string.connected_tunnel);
+			}
+			else {
+				pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+					@Override
+					public boolean onPreferenceClick(Preference preference) {
+						doConnect(preference.getTitle().toString());
+						return true;
+					}
+				});
+			}
 
 			pref.setOrder(position);
 			screen.addPreference(pref);
@@ -224,6 +272,16 @@ public class TunnelListPreferences extends PreferenceActivity {
 		}
 
 		return super.onCreateDialog(id);
+	}
+
+	@Override
+	public void onTunnelConnect(String name) {
+		populateTunnels();		
+	}
+
+	@Override
+	public void onTunnelDisconnet(String name) {
+		populateTunnels();
 	}
 
 }

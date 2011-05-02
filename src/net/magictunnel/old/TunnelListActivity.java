@@ -52,7 +52,7 @@ public class TunnelListActivity extends ListActivity {
                                     ContextMenuInfo menuInfo) {
       super.onCreateContextMenu(menu, v, menuInfo);
       MenuInflater inflater = getMenuInflater();
-      inflater.inflate(R.menu.settingsmanager, menu);
+      inflater.inflate(R.menu.tunnellistpref_context, menu);
       TextView tv = (TextView)v;
       menu.setHeaderTitle(tv.getText());
     }
