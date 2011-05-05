@@ -3,7 +3,13 @@ package net.magictunnel.core;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 import net.magictunnel.R;
 import net.magictunnel.Utils;
@@ -13,6 +19,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.widget.Toast;
 
@@ -24,6 +31,9 @@ public class Iodine {
 	
 	private Commands m_cmds;
 	private Context m_context;
+	
+	//TODO: clear the saved routes when connectivity changes
+	List<RouteEntry> m_savedRoutes;
 	
 	private ArrayList<ITunnelStatusListener> m_listeners = new ArrayList<ITunnelStatusListener>(); 
 	
@@ -57,19 +67,39 @@ public class Iodine {
 	}
 	
 	/**
-	 * Verifies that the dns0 interface is up. It indicates that
-	 * the DNS tunnel is up and running.
-	 * @return
+	 * Reroutes the traffic through the tunnel
+	 * @param transportInterface is either wifi or cellular NIC.
 	 */
-	public boolean checkInterface() {
-		m_cmds.runCommandAsRoot("ifconfig dns0");
-		//pollProgress(m_cmds.getProcess().getErrorStream());
+	public boolean setupRoute(String transportInterface) {
+		
+		NetworkInterface ni;
+		
 		try {
-			m_cmds.getProcess().waitFor();
-		} catch (InterruptedException e) {
-
+			ni = NetworkInterface.getByName("dns0");
+		} catch (SocketException e) {
+			return false;
 		}
-		return m_cmds.getProcess().exitValue() == 0;
+		
+		Enumeration<InetAddress> addresses =   ni.getInetAddresses();
+		if (!addresses.hasMoreElements()) {
+			return false;
+		}
+
+		InetAddress dnsIspServer = NetworkUtils.getDns();
+		if (dnsIspServer == null) {
+			return false;
+		}
+		
+		
+		m_savedRoutes = NetworkUtils.getRoutes();
+		RouteEntry oldDefaultRoute = NetworkUtils.getDefaultRoute(m_savedRoutes, transportInterface);
+		InetAddress oldDefaultGateway = NetworkUtils.intToInetAddress(oldDefaultRoute.getGateway());
+		
+		NetworkUtils.removeDefaultRoute(transportInterface);
+		NetworkUtils.addHostRoute(transportInterface, dnsIspServer, oldDefaultGateway);
+		NetworkUtils.addDefaultRoute("dns0");
+		
+		return true;
 	}
 	
 	/**
@@ -88,11 +118,12 @@ public class Iodine {
 		}else {
 			return false;
 		}
-		
+
 		info = mgr.getNetworkInfo(type);
 		if (info != null) {
 			return info.isConnected();
 		}
+		
 		return false;
 	}
 	
@@ -117,6 +148,12 @@ public class Iodine {
 	
 	
 	public void disconnect() {
+		if (m_savedRoutes != null) {
+			NetworkUtils.removeAllRoutes();
+			NetworkUtils.restoreRoutes(m_savedRoutes);
+			m_savedRoutes = null;
+		}
+		
 		m_cmds.runCommandAsRoot("killall -9 iodine > /dev/null");
 		try {
 			Thread.sleep(500);
@@ -239,10 +276,22 @@ public class Iodine {
 			super.onPostExecute(result);
 			m_progress.cancel();
 			
-			if (!checkInterface()) {
+			if (!NetworkUtils.interfaceExists("dns0")) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
 						R.string.iodine_check_dns);
 				return;
+			}
+			
+			String iface;
+			if (m_interface.equals(Interfaces.CELLULAR)) {
+				iface = NetworkUtils.getMobileInterface(m_context);
+			}else {
+				iface = NetworkUtils.getWifiInterface(m_context);
+			}
+			
+			if (!setupRoute(iface)) {
+				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
+						R.string.iodine_routing_error);
 			}
 			
 			showConnectionToast(R.string.iodine_notify_connected);

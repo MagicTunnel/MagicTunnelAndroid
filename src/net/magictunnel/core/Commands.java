@@ -82,6 +82,16 @@ public class Commands {
 		}
 	}
 
+	public int runCommandAsRootAndWait(String command) {
+		runCommandAsRoot(command);
+    	try {
+			m_proc.waitFor();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+    	return m_proc.exitValue();
+	}
+	
 	public Process getProcess() {
 		return m_proc;
 	}

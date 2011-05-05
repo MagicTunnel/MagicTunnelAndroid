@@ -72,6 +72,7 @@
 
     <!-- Iodine messages -->
     <string name="iodine_no_connectivity">Cannot establish tunnel</string>
+    <string name="iodine_routing_error">Could not reroute traffic through tunnel. Check your phone.</string>
     <string name="iodine_check_dns">It is possible that the access point does not allow external DNS traffic.
     Check the log for more information.</string>
     <string name="iodine_enable_mobile">Please activate the mobile connection</string>
