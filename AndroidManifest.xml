@@ -28,7 +28,7 @@
 
 
         <activity android:name="TunnelListPreferences"
-                  android:label="@string/settings">
+                  android:label="@string/magictunnel_tunnels">
         </activity>
 
         <activity android:name="Log"

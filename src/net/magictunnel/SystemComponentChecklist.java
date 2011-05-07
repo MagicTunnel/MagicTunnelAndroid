@@ -25,7 +25,7 @@ public class SystemComponentChecklist extends PreferenceActivity {
 		addPreferencesFromResource(R.xml.checklist);
 		
 		if (Installer.iodineInstalled()) {
-			Intent intent = new Intent().setClass(this, MainActivity.class);
+			Intent intent = new Intent().setClass(this, TunnelListPreferences.class);
 			startActivity(intent);
 			finish();
 		}
@@ -88,7 +88,7 @@ public class SystemComponentChecklist extends PreferenceActivity {
 			@Override
 			public boolean onPreferenceClick(Preference preference) {
 				Intent intent = new Intent().setClass(preference.getContext(), 
-						MainActivity.class);
+						TunnelListPreferences.class);
 				
 				Installer installer = new Installer(preference.getContext());
 				
