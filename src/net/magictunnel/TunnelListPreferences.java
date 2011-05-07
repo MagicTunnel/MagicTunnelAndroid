@@ -8,8 +8,10 @@ import net.magictunnel.settings.Profile;
 import net.magictunnel.settings.Settings;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
@@ -24,10 +26,12 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
-public class TunnelListPreferences extends PreferenceActivity implements ITunnelStatusListener {
+public class TunnelListPreferences extends PreferenceActivity implements
+		ITunnelStatusListener {
 	private static final int MENU_LOG = Menu.FIRST;
+	private static final int MENU_DONATE = Menu.FIRST + 1;
+	private static final int MENU_HELP = Menu.FIRST + 2;
 
-	
 	private static final int CONFIRM_DELETE_DIALOG_ID = 0;
 	private int m_firstTunnelIndex = 0;
 
@@ -38,12 +42,12 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.tunnellist);
 		registerForContextMenu(getListView());
-		
+
 		MagicTunnel mt = ((MagicTunnel) getApplication());
 		Iodine iod = mt.getIodine();
 		iod.registerListener(this);
-		
-		populateScreen();		
+
+		populateScreen();
 	}
 
 	@Override
@@ -53,7 +57,7 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		iod.unregisterListener(this);
 		super.onDestroy();
 	}
-	
+
 	private void populateScreen() {
 		PreferenceScreen screen = getPreferenceScreen();
 		screen.removeAll();
@@ -116,10 +120,10 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 
 		if (getConnectedProfile().equals(profile)) {
 			inflater.inflate(R.menu.tunnellistpref_disconnect, menu);
-		}else {
+		} else {
 			inflater.inflate(R.menu.tunnellistpref_context, menu);
 		}
-		menu.setHeaderTitle(profile);				
+		menu.setHeaderTitle(profile);
 	}
 
 	private String getSelectedProfile(AdapterContextMenuInfo menuInfo) {
@@ -138,9 +142,9 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		Iodine iod = mt.getIodine();
 		iod.disconnect();
 	}
-	
+
 	private void doConnect(String profileName) {
-		MagicTunnel mt = ((MagicTunnel) getApplication()); 
+		MagicTunnel mt = ((MagicTunnel) getApplication());
 		Settings s = mt.getSettings();
 		Profile p = s.getProfile(profileName);
 
@@ -167,7 +171,7 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		case R.id.cfg_menu_disconnect:
 			doDisconnect();
 			return true;
-			
+
 		case R.id.cfg_menu_connect:
 			doConnect(profileName);
 			return true;
@@ -195,23 +199,22 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 	private String getConnectedProfile() {
 		MagicTunnel app = (MagicTunnel) getApplication();
 		Iodine iod = app.getIodine();
-		
+
 		boolean isConnected = iod.isIodineRunning();
 		Profile activeProfile = iod.getActiveProfile();
-		
+
 		if (!isConnected || activeProfile == null) {
 			return "";
 		}
 		return activeProfile.getName();
 	}
-	
+
 	private void populateTunnels() {
 		Preference pref;
 		PreferenceScreen screen = getPreferenceScreen();
 		MagicTunnel app = (MagicTunnel) getApplication();
 		String activeProfile = getConnectedProfile();
-		
-		
+
 		// Remove old tunnels from the list
 		while (screen.getPreferenceCount() > m_firstTunnelIndex) {
 			screen.removePreference(screen.getPreference(m_firstTunnelIndex));
@@ -227,8 +230,7 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 
 			if (activeProfile.equals(p)) {
 				pref.setSummary(R.string.connected_tunnel);
-			}
-			else {
+			} else {
 				pref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 					@Override
 					public boolean onPreferenceClick(Preference preference) {
@@ -250,7 +252,7 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		Settings s = app.getSettings();
 		Profile profile = s.getProfile(profileName);
 		s.deleteProfile(profile, TunnelListPreferences.this);
-		populateTunnels();		
+		populateTunnels();
 	}
 
 	/**
@@ -278,27 +280,48 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 	}
 
 	@Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        menu.add(0, MENU_LOG, 0, R.string.main_menu_log)
-            .setIcon(android.R.drawable.ic_menu_info_details);
-        return true;
-    }
-	
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		menu.add(0, MENU_LOG, 0, R.string.main_menu_log).setIcon(
+				android.R.drawable.ic_menu_info_details);
+		menu.add(0, MENU_DONATE, 0, R.string.main_menu_donate).setIcon(
+				android.R.drawable.star_big_on);
+		menu.add(0, MENU_HELP, 0, R.string.main_menu_help).setIcon(
+				android.R.drawable.ic_menu_help);
+		return true;
+	}
+
 	@Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case MENU_LOG:
-        		Intent intent = new Intent().setClass(TunnelListPreferences.this, Log.class);
-        		startActivity(intent);
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-	
+	public boolean onOptionsItemSelected(MenuItem item) {
+		Intent intent;
+		String url;
+		switch (item.getItemId()) {
+		case MENU_LOG:
+			intent = new Intent().setClass(TunnelListPreferences.this,
+					Log.class);
+			break;
+
+		case MENU_DONATE:
+			url = getString(R.string.url_donate);
+			intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+			break;
+
+		case MENU_HELP:
+			url = getString(R.string.url_help);
+			intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+			break;
+		default:
+			return false;
+		}
+
+		startActivity(intent);
+
+		return true;
+	}
+
 	@Override
 	public void onTunnelConnect(String name) {
-		populateTunnels();		
+		populateTunnels();
 	}
 
 	@Override

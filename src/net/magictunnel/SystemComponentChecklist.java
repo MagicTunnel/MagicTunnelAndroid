@@ -123,7 +123,8 @@ public class SystemComponentChecklist extends PreferenceActivity {
 			
 			@Override
 			public boolean onPreferenceClick(Preference preference) {
-				Intent intent = new Intent("android.intent.action.VIEW", Uri.parse("http://www.magictunnel.net/"));
+				String url = preference.getContext().getString(R.string.url_setup_help);
+				Intent intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
 
 				try {
 				 preference.getContext().startActivity(intent);

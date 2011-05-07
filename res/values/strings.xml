@@ -87,9 +87,16 @@
     
     <!-- Main activity menu items -->
     <string name="main_menu_log">Connection Log</string>
+    <string name="main_menu_donate">Donate</string>
+    <string name="main_menu_help">Online Help</string>
     
     <!-- Log activity -->
     <string name="log_header">This page shows the messages from the last connection attempt.
     You can use them to diagnose connectivity problems.</string>
 	<string name="log_empty">The log is empty. Connect to a tunnel first.</string>
+	
+	<!-- Various URLS -->
+	<string name="url_help">http://www.magictunnel.net/</string>
+	<string name="url_setup_help">http://www.magictunnel.net/setup.php</string>
+	<string name="url_donate">http://www.magictunnel.net/donate.php</string>
 </resources>
