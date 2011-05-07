@@ -35,6 +35,8 @@ public class Iodine {
 	//TODO: clear the saved routes when connectivity changes
 	List<RouteEntry> m_savedRoutes;
 	
+	private StringBuffer m_log = new StringBuffer();
+	
 	private ArrayList<ITunnelStatusListener> m_listeners = new ArrayList<ITunnelStatusListener>(); 
 	
 	public Iodine() {
@@ -208,9 +210,8 @@ public class Iodine {
 	}
 	
 	public class LauncherTask extends AsyncTask<Void, String, Boolean> {
-	
+		private ArrayList<String> m_messages = new ArrayList<String>();
 		private ProgressDialog m_progress;
-		private StringBuffer m_messages = new StringBuffer();
 		
 		private LauncherTask() {
 			
@@ -251,6 +252,7 @@ public class Iodine {
 				return;
 			}
 			
+			m_log = new StringBuffer();
 			m_progress = new ProgressDialog(m_context);
 			m_progress.setCancelable(false);
 			m_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -301,9 +303,20 @@ public class Iodine {
 		@Override
 		protected void onProgressUpdate(String... values) {
 			super.onProgressUpdate(values);
-			m_messages.append(values[0]);
-			m_messages.append("\n");
-			m_progress.setMessage(m_messages.toString());
+			m_log.append(values[0]);
+			m_log.append("\n");
+			m_messages.add(values[0]);
+			
+			if (m_messages.size() > 5) {
+				m_messages.remove(0);
+			}
+			
+			StringBuffer buf = new StringBuffer();
+			for (String s:m_messages) {
+				buf.append(s + "\n");
+			}
+			
+			m_progress.setMessage(buf.toString());
 		}
 	
 	}
