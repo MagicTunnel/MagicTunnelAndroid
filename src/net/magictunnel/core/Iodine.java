@@ -25,10 +25,7 @@ import android.os.AsyncTask;
 import android.widget.Toast;
 
 public class Iodine {
-	private String m_profileName;
-	private String m_password;
-	private String m_domain;
-	private Interfaces m_interface;
+	private Profile m_activeProfile;
 	
 	private Commands m_cmds;
 	private Context m_context;
@@ -44,25 +41,13 @@ public class Iodine {
 		m_cmds = new Commands();
 	}
 	
-	public Iodine(Profile profile) {
-		setProfile(profile);
-		m_cmds = new Commands();		
-	}
-	
-	public void setProfile(Profile profile) {
-		m_password = profile.getPassword();
-		m_domain = profile.getDomainName();
-		m_interface = profile.getInterface();
-		m_profileName = profile.getName();
-	}
-	
 	public void setContext(Context ctx) {
 		m_context = ctx;
 	}
 	
 	
-	public String getProfileName() {
-		return m_profileName;
+	public Profile getActiveProfile() {
+		return m_activeProfile;
 	}
 	
 	public boolean isIodineRunning() {
@@ -109,27 +94,26 @@ public class Iodine {
 		return true;
 	}
 	
-	private StringBuilder buildCommandLine() throws IodineException {
-		if (m_interface == null) {
-			throw new IodineException(R.string.iodineexception_invalid_interface);
-		}
-		
-		
+	private StringBuilder buildCommandLine(Profile p) throws IodineException {
 		StringBuilder cmdBuilder = new StringBuilder();
 		cmdBuilder.append("iodine");
 		
-		if (m_password != null) {
+		if (p.getPassword() != null) {
 			cmdBuilder.append(" -P ");
-			cmdBuilder.append(m_password);
+			cmdBuilder.append(p.getPassword());
 		}
 		
 		cmdBuilder.append(" -d dns0 ");
-		cmdBuilder.append(m_domain);
+		cmdBuilder.append(p.getDomainName());
 		return cmdBuilder;
 	}
 	
 	
 	public void disconnect() {
+		if (m_activeProfile == null) {
+			return;
+		}
+
 		if (m_savedRoutes != null) {
 			NetworkUtils.removeAllRoutes();
 			NetworkUtils.restoreRoutes(m_savedRoutes);
@@ -144,9 +128,10 @@ public class Iodine {
 			e.printStackTrace();
 		}
 		showConnectionToast(R.string.iodine_notify_disconnected);
-		broadcastOnTunnelDisconnect(m_profileName);
+		broadcastOnTunnelDisconnect(m_activeProfile.getName());
+		m_activeProfile = null;
 	}
-	
+
 	private void showConnectionToast(int messageId) {
 		String text = m_context.getString(messageId);
 		int duration = Toast.LENGTH_LONG;
@@ -172,7 +157,7 @@ public class Iodine {
 			l.onTunnelConnect(name);
 		}
 	}
-	
+
 	private void broadcastOnTunnelDisconnect(String name) {
 		for (ITunnelStatusListener l:m_listeners) {
 			l.onTunnelDisconnet(name);
@@ -185,24 +170,25 @@ public class Iodine {
 	 * to recreate a new one on each use.
 	 * @return
 	 */
-	public LauncherTask getLauncher() {
-		return new LauncherTask();
+	public LauncherTask getLauncher(Profile p) {
+		return new LauncherTask(p);
 	}
 	
 	public class LauncherTask extends AsyncTask<Void, String, Boolean> {
 		private ArrayList<String> m_messages = new ArrayList<String>();
 		private ProgressDialog m_progress;
+		private Profile m_profile;
 		
-		private LauncherTask() {
-			
+		private LauncherTask(Profile p) {
+			m_profile = p;
 		}
 		
 		private void launch() throws IodineException, InterruptedException {
 			publishProgress("Killing previous instance of iodine...");
 			m_cmds.runCommandAsRoot("killall -9 iodine > /dev/null");
 			Thread.sleep(500);
-					
-			m_cmds.runCommandAsRoot(buildCommandLine().toString());		
+
+			m_cmds.runCommandAsRoot(buildCommandLine(m_profile).toString());
 			pollProgress(m_cmds.getProcess().getErrorStream());
 		}
 
@@ -220,7 +206,7 @@ public class Iodine {
 		}
 
 		private String getActiveInterface() {
-			if (m_interface.equals(Interfaces.CELLULAR)) {
+			if (m_profile.getInterface().equals(Interfaces.CELLULAR)) {
 				return NetworkUtils.getMobileInterface(m_context);
 			}else {
 				return NetworkUtils.getWifiInterface(m_context);
@@ -230,10 +216,11 @@ public class Iodine {
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
+			Interfaces iface = m_profile.getInterface();
 			
-			if (!NetworkUtils.checkConnectivity(m_context, m_interface)) {
+			if (!NetworkUtils.checkConnectivity(m_context, iface)) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
-						m_interface.equals(Interfaces.WIFI) ?
+						iface.equals(Interfaces.WIFI) ?
 						R.string.iodine_enable_wifi:R.string.iodine_enable_mobile);
 				cancel(true);
 				return;
@@ -288,7 +275,8 @@ public class Iodine {
 			}
 			
 			showConnectionToast(R.string.iodine_notify_connected);
-			broadcastOnTunnelConnect(m_profileName);
+			m_activeProfile = m_profile;
+			broadcastOnTunnelConnect(m_profile.getName());
 		}
 		
 		@Override
@@ -309,8 +297,5 @@ public class Iodine {
 			
 			m_progress.setMessage(buf.toString());
 		}
-	
 	}
-
-	
 }

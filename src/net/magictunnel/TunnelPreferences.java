@@ -1,31 +1,24 @@
 package net.magictunnel;
 
-import java.security.KeyStore.LoadStoreParameter;
-
 import net.magictunnel.settings.Interfaces;
 import net.magictunnel.settings.Profile;
 import net.magictunnel.settings.Settings;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
+import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
-import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceActivity;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 
 public class TunnelPreferences extends PreferenceActivity {
@@ -188,7 +181,6 @@ public class TunnelPreferences extends PreferenceActivity {
 	
 	private ListPreference createInterfacePreference() {
 		ListPreference prefInterface = new ListPreference(this);
-		//prefInterface.setKey(prefixedName + Profile.PROFILE_INTERFACE);
 		prefInterface.setTitle(R.string.network_interface);
 		prefInterface.setEntries(R.array.interface_list);
 		prefInterface.setEntryValues(R.array.interface_list_values);
@@ -207,7 +199,6 @@ public class TunnelPreferences extends PreferenceActivity {
 	
 	private EditTextPreference createDomainPreference() {
 		EditTextPreference prefDomain = new EditTextPreference(this);
-//		prefDomain.setKey(prefixedName + Profile.PROFILE_DOMAIN);
 		prefDomain.setTitle(R.string.domain_name);
 		prefDomain.setDialogTitle(R.string.domain_name);
 		prefDomain.getEditText().setInputType(

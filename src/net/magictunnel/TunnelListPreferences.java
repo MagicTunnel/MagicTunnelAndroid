@@ -145,9 +145,8 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		}
 
 		Iodine iod = mt.getIodine();
-		iod.setProfile(p);
 		iod.setContext(this);
-		iod.getLauncher().execute(null);		
+		iod.getLauncher(p).execute(null);
 	}
 
 	@Override
@@ -194,12 +193,12 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		Iodine iod = app.getIodine();
 		
 		boolean isConnected = iod.isIodineRunning();
-		String activeProfile = iod.getProfileName();
+		Profile activeProfile = iod.getActiveProfile();
 		
 		if (!isConnected || activeProfile == null) {
 			return "";
 		}
-		return activeProfile;
+		return activeProfile.getName();
 	}
 	
 	private void populateTunnels() {
