@@ -66,6 +66,7 @@
     <string name="checklist_proceed_subtitle">Copy tunnel daemon to system partition</string>
     <string name="checklist_nok">Required components missing</string>
     <string name="checklist_nok_subtitle">Tap here for help</string>
+    <string name="checklist_install_ok">Successfully installed</string>
     
     <!--  IodineException messages -->
     <string name="iodineexception_invalid_interface">Invalid interface specified</string>

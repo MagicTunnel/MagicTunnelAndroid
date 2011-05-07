@@ -14,6 +14,7 @@ import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
+import android.widget.Toast;
 
 public class SystemComponentChecklist extends PreferenceActivity {
 	private boolean m_hasRoot = false;
@@ -56,14 +57,11 @@ public class SystemComponentChecklist extends PreferenceActivity {
 		screen.addPreference(prefTun);
 		screen.addPreference(catAction);
 		
-		
-		addProceedButton();
-		addHelpButton();
-		/*if (m_hasRoot && m_hasTun) {
+		if (m_hasRoot && m_hasTun) {
 			addProceedButton();
 		}else {
 			addHelpButton();
-		}*/
+		}
 	}
 	
 	CheckBoxPreference createCustomCheckBox(int id) {
@@ -99,6 +97,9 @@ public class SystemComponentChecklist extends PreferenceActivity {
 					return false;
 				}
 				
+				Toast t = Toast.makeText(preference.getContext(), R.string.checklist_install_ok, Toast.LENGTH_LONG);
+				t.show();
+
 				preference.getContext().startActivity(intent);
 				finish();
 				return false;
