@@ -81,6 +81,14 @@ public class TunnelPreferences extends PreferenceActivity {
 		m_password = prof.getPassword();
 		m_prefPassword.getEditText().setText(prof.getPassword());
 		
+		if (m_password.length() == 0) {
+			m_prefPassword.setSummary(R.string.profile_password_not_set);
+			m_prefPassword.getEditText().setHint(R.string.profile_password_not_set);
+		}else {
+			m_prefPassword.setSummary(R.string.profile_password_unchanged);
+			m_prefPassword.getEditText().setHint(R.string.profile_password_unchanged);
+		}
+		
 		m_profile = prof;
 	}
 	
@@ -146,7 +154,10 @@ public class TunnelPreferences extends PreferenceActivity {
 		screen.addPreference(m_prefDomain);
 		
 		m_prefPassword = createPasswordPreference();
-		screen.addPreference(m_prefPassword);		
+		screen.addPreference(m_prefPassword);
+		m_prefPassword.setSummary(R.string.profile_password_not_set);
+		m_prefPassword.getEditText().setHint(R.string.profile_password_not_set);
+
 	}
 	
 	private EditTextPreference createNamePreference() {
@@ -226,6 +237,9 @@ public class TunnelPreferences extends PreferenceActivity {
 			@Override
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				m_password = ((String) newValue);
+				EditTextPreference prefPassword = (EditTextPreference) preference;
+				m_prefPassword.setSummary(R.string.profile_password_changed);
+				prefPassword.getEditText().setHint("");
 				return true;
 			}
 		});

@@ -49,6 +49,10 @@
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     
+    <string name="profile_password_not_set">Password not set</string>
+    <string name="profile_password_unchanged">Password not changed</string>
+    <string name="profile_password_changed">Password set</string>
+    
     <string name="profile_exists">The chosen profile name already exists</string>
     <string name="profile_select_interface">Please select the interface to use for the tunnel</string>
     <string name="profile_enter_domain">Please enter the domain name of the tunnel endpoint</string>
