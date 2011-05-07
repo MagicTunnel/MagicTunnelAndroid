@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
+import net.magictunnel.MagicTunnel;
 import net.magictunnel.R;
 import net.magictunnel.Utils;
 import net.magictunnel.settings.Interfaces;
@@ -82,7 +83,7 @@ public class Iodine {
 			return false;
 		}
 		
-		Enumeration<InetAddress> addresses =   ni.getInetAddresses();
+		Enumeration<InetAddress> addresses = ni.getInetAddresses();
 		if (!addresses.hasMoreElements()) {
 			return false;
 		}
@@ -95,6 +96,10 @@ public class Iodine {
 		
 		m_savedRoutes = NetworkUtils.getRoutes();
 		RouteEntry oldDefaultRoute = NetworkUtils.getDefaultRoute(m_savedRoutes, transportInterface);
+		if (oldDefaultRoute == null) {
+			return false;
+		}
+
 		InetAddress oldDefaultGateway = NetworkUtils.intToInetAddress(oldDefaultRoute.getGateway());
 		
 		NetworkUtils.removeDefaultRoute(transportInterface);
@@ -102,31 +107,6 @@ public class Iodine {
 		NetworkUtils.addDefaultRoute("dns0");
 		
 		return true;
-	}
-	
-	/**
-	 * 
-	 * @return Whether WIFI or Data connection is enabled
-	 */
-	public boolean checkConnectivity() {
-		ConnectivityManager mgr = (ConnectivityManager)m_context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo info;
-		int type=-1;
-		
-		if (m_interface.equals(Interfaces.WIFI)) {
-			type = ConnectivityManager.TYPE_WIFI;
-		}else if (m_interface.equals(Interfaces.CELLULAR)) {
-			type = ConnectivityManager.TYPE_MOBILE;
-		}else {
-			return false;
-		}
-
-		info = mgr.getNetworkInfo(type);
-		if (info != null) {
-			return info.isConnected();
-		}
-		
-		return false;
 	}
 	
 	private StringBuilder buildCommandLine() throws IodineException {
@@ -239,12 +219,19 @@ public class Iodine {
 			}		
 		}
 
-		
+		private String getActiveInterface() {
+			if (m_interface.equals(Interfaces.CELLULAR)) {
+				return NetworkUtils.getMobileInterface(m_context);
+			}else {
+				return NetworkUtils.getWifiInterface(m_context);
+			}
+		}
+
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
 			
-			if (!checkConnectivity()) {
+			if (!NetworkUtils.checkConnectivity(m_context, m_interface)) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
 						m_interface.equals(Interfaces.WIFI) ?
 						R.string.iodine_enable_wifi:R.string.iodine_enable_mobile);
@@ -252,6 +239,14 @@ public class Iodine {
 				return;
 			}
 			
+			if (!NetworkUtils.checkRoutes(getActiveInterface())) {
+				Utils.showErrorMessage(m_context,
+						R.string.iodine_no_route,
+						R.string.iodine_cycle_connection);
+				cancel(true);
+				return;
+			}
+
 			m_log = new StringBuffer();
 			m_progress = new ProgressDialog(m_context);
 			m_progress.setCancelable(false);
@@ -284,16 +279,12 @@ public class Iodine {
 				return;
 			}
 			
-			String iface;
-			if (m_interface.equals(Interfaces.CELLULAR)) {
-				iface = NetworkUtils.getMobileInterface(m_context);
-			}else {
-				iface = NetworkUtils.getWifiInterface(m_context);
-			}
+			String iface = getActiveInterface();
 			
 			if (!setupRoute(iface)) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
 						R.string.iodine_routing_error);
+				return;
 			}
 			
 			showConnectionToast(R.string.iodine_notify_connected);

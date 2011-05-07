@@ -30,7 +30,11 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
+import net.magictunnel.settings.Interfaces;
+
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
@@ -266,8 +270,8 @@ public class NetworkUtils {
 	
 	public static String getWifiInterface(Context ctx) {
 		//Get the ip of the Wifi interface
-		WifiManager m_wifi = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
-		int ip = m_wifi.getConnectionInfo().getIpAddress();
+		WifiManager wifi = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
+		int ip = wifi.getConnectionInfo().getIpAddress();
 		if (ip == 0) {
 			return null;
 		}
@@ -314,4 +318,44 @@ public class NetworkUtils {
 		}
 		return false;
 	}
+
+	/**
+	 * Verifies that Internet is reachable
+	 * @param transportInterface
+	 * @return whether the default route on transportInterface exists
+	 */
+	public static boolean checkRoutes(String transportInterface) {
+		List<RouteEntry> routes = getRoutes();
+		RouteEntry oldDefaultRoute = getDefaultRoute(routes, transportInterface);
+		if (oldDefaultRoute == null) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 *
+	 * @return Whether WIFI or Data connection is enabled
+	 */
+	public static boolean checkConnectivity(Context ctx, Interfaces iface) {
+		ConnectivityManager mgr = (ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo info;
+		int type=-1;
+
+		if (iface.equals(Interfaces.WIFI)) {
+			type = ConnectivityManager.TYPE_WIFI;
+		}else if (iface.equals(Interfaces.CELLULAR)) {
+			type = ConnectivityManager.TYPE_MOBILE;
+		}else {
+			return false;
+		}
+
+		info = mgr.getNetworkInfo(type);
+		if (info != null) {
+			return info.isConnected();
+		}
+
+		return false;
+	}
+
 }
