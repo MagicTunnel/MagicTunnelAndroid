@@ -45,6 +45,9 @@ public class Iodine {
 		m_context = ctx;
 	}
 	
+	public StringBuffer getLog() {
+		return m_log;
+	}
 	
 	public Profile getActiveProfile() {
 		return m_activeProfile;

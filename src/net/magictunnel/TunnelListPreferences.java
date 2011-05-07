@@ -17,6 +17,7 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,6 +25,9 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public class TunnelListPreferences extends PreferenceActivity implements ITunnelStatusListener {
+	private static final int MENU_LOG = Menu.FIRST;
+
+	
 	private static final int CONFIRM_DELETE_DIALOG_ID = 0;
 	private int m_firstTunnelIndex = 0;
 
@@ -273,6 +277,25 @@ public class TunnelListPreferences extends PreferenceActivity implements ITunnel
 		return super.onCreateDialog(id);
 	}
 
+	@Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        menu.add(0, MENU_LOG, 0, R.string.main_menu_log)
+            .setIcon(android.R.drawable.ic_menu_info_details);
+        return true;
+    }
+	
+	@Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case MENU_LOG:
+        		Intent intent = new Intent().setClass(TunnelListPreferences.this, Log.class);
+        		startActivity(intent);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+	
 	@Override
 	public void onTunnelConnect(String name) {
 		populateTunnels();		

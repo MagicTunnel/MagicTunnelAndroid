@@ -31,7 +31,11 @@
                   android:label="@string/settings">
         </activity>
 
-	<activity android:name="TunnelPreferences"
+        <activity android:name="Log"
+                  android:label="@string/log">
+        </activity>
+
+		<activity android:name="TunnelPreferences"
                   android:label="@string/settings">
         </activity>
 
