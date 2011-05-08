@@ -6,10 +6,13 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.magictunnel.MagicTunnel;
 import net.magictunnel.R;
@@ -34,6 +37,7 @@ public class Iodine {
 	List<RouteEntry> m_savedRoutes;
 	
 	private StringBuffer m_log = new StringBuffer();
+	private Pattern m_rawPattern = Pattern.compile("directly to\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
 	
 	private ArrayList<ITunnelStatusListener> m_listeners = new ArrayList<ITunnelStatusListener>(); 
 	
@@ -60,8 +64,10 @@ public class Iodine {
 	/**
 	 * Reroutes the traffic through the tunnel
 	 * @param transportInterface is either wifi or cellular NIC.
+	 * @param tunnelEntry is the address where data gets tunneled (e.g., ISP's DNS server
+	 * or Iodine server in case of raw tunnel).
 	 */
-	public boolean setupRoute(String transportInterface) {
+	public boolean setupRoute(String transportInterface, InetAddress tunnelEntry) {
 		
 		NetworkInterface ni;
 		
@@ -76,12 +82,6 @@ public class Iodine {
 			return false;
 		}
 
-		InetAddress dnsIspServer = NetworkUtils.getDns();
-		if (dnsIspServer == null) {
-			return false;
-		}
-		
-		
 		m_savedRoutes = NetworkUtils.getRoutes();
 		RouteEntry oldDefaultRoute = NetworkUtils.getDefaultRoute(m_savedRoutes, transportInterface);
 		if (oldDefaultRoute == null) {
@@ -91,10 +91,48 @@ public class Iodine {
 		InetAddress oldDefaultGateway = NetworkUtils.intToInetAddress(oldDefaultRoute.getGateway());
 		
 		NetworkUtils.removeDefaultRoute(transportInterface);
-		NetworkUtils.addHostRoute(transportInterface, dnsIspServer, oldDefaultGateway);
+		NetworkUtils.addHostRoute(transportInterface, tunnelEntry, oldDefaultGateway);
 		NetworkUtils.addDefaultRoute("dns0");
 		
 		return true;
+	}
+	
+	/**
+	 * Sets up the most optimal route depending on whether or not
+	 * raw connections are accepted by the network.
+	 * @param transportInterface
+	 * @return
+	 */
+	public boolean setupRoute(String transportInterface) {
+		InetAddress raw = getRawEndpoint(m_log);
+		if (raw != null) {
+			return setupRoute(transportInterface, raw);
+		}else {
+			InetAddress dnsIspServer = NetworkUtils.getDns();
+			if (dnsIspServer == null) {
+				return false;
+			}
+			return setupRoute(transportInterface, dnsIspServer);
+		}
+	}
+	
+	/**
+	 * Extracts the raw endpoint from the Iodine log messages.
+	 * @param log
+	 * @return
+	 */
+	InetAddress getRawEndpoint(StringBuffer log) {
+		Matcher m = m_rawPattern.matcher(log.toString());
+
+		if (!m.find()) {
+			return null;
+		}
+		String addr = m.group(1);
+		try {
+			return InetAddress.getByName(addr);
+		} catch (UnknownHostException e) {
+		}
+		return null;
 	}
 	
 	private StringBuilder buildCommandLine(Profile p) throws IodineException {
