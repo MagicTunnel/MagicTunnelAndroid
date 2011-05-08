@@ -153,6 +153,9 @@ public class TunnelListPreferences extends PreferenceActivity implements
 		}
 
 		Iodine iod = mt.getIodine();
+		if (!getConnectedProfile().equals("")) {
+			iod.disconnect();
+		}
 		iod.setContext(this);
 		iod.getLauncher(p).execute(null);
 	}

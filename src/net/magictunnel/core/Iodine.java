@@ -20,11 +20,16 @@ import net.magictunnel.Utils;
 import net.magictunnel.settings.Interfaces;
 import net.magictunnel.settings.Profile;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.widget.Toast;
 
 public class Iodine {
@@ -49,6 +54,8 @@ public class Iodine {
 		m_context = ctx;
 	}
 	
+
+	
 	public StringBuffer getLog() {
 		return m_log;
 	}
@@ -59,6 +66,10 @@ public class Iodine {
 	
 	public boolean isIodineRunning() {
 		return Commands.isProgramRunning("iodine");
+	}
+	
+	public void resetSavedRoutes() {
+		m_savedRoutes = null;
 	}
 	
 	/**
