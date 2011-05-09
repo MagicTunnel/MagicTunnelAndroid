@@ -30,8 +30,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import net.magictunnel.settings.Interfaces;
-
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -286,28 +284,6 @@ public class NetworkUtils {
 			e.printStackTrace();
 		}
 		return null;
-	}
-	
-	/**
-	 * For now, we infer the interface name based on the default route.
-	 * There is currently no API to infer it in more reliable ways.
-	 * https://code.google.com/p/android/issues/detail?id=15082.
-	 * We observe that wifi and mobile are mutually exclusive, so there
-	 * should be only one default route.
-	 * There might be a VPN concurrently running, though.
-	 * 
-	 * @param ctx
-	 * @return
-	 */
-	@Deprecated
-	public static String getMobileInterface(Context ctx) {
-		List<RouteEntry> routes = getRoutes();
-		RouteEntry re = getDefaultRoute(routes);
-		if (re == null) {
-			return null;
-		}
-		
-		return re.getIface();
 	}
 	
 	public static String getDefaultRouteIface() {

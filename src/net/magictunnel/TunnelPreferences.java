@@ -1,6 +1,5 @@
 package net.magictunnel;
 
-import net.magictunnel.settings.Interfaces;
 import net.magictunnel.settings.Profile;
 import net.magictunnel.settings.Settings;
 import android.app.AlertDialog;
@@ -29,13 +28,11 @@ public class TunnelPreferences extends PreferenceActivity {
 
 	private String m_name;
 	private String m_domain;
-	private String m_interface;
 	private String m_password;
     
 	private EditTextPreference m_prefName;
 	private EditTextPreference m_prefDomain;
 	private EditTextPreference m_prefPassword;
-	private ListPreference m_prefInterface;
 	
 	private boolean m_new;
 	private Settings m_settings;
@@ -57,7 +54,6 @@ public class TunnelPreferences extends PreferenceActivity {
 		if (curProfile.equals("")) {
 			m_new = true;
 			m_profile = new Profile();
-			m_password = m_interface = m_domain = m_name = "";			
 			return;
 		}
 	
@@ -73,11 +69,7 @@ public class TunnelPreferences extends PreferenceActivity {
 		m_domain = prof.getDomainName();
 		m_prefDomain.getEditText().setText(prof.getDomainName());
 		m_prefDomain.setSummary(prof.getDomainName());
-		
-		m_interface = prof.getInterface().toString();
-		m_prefInterface.setValue(prof.getInterface().toString());
-		m_prefInterface.setSummary(getInterfaceSummary(m_prefInterface, prof.getInterface()));
-		
+				
 		m_password = prof.getPassword();
 		m_prefPassword.getEditText().setText(prof.getPassword());
 		
@@ -104,10 +96,6 @@ public class TunnelPreferences extends PreferenceActivity {
 			return getString(R.string.profile_enter_name);
 		}
 		
-		if (m_interface.equals("")) {
-			return getString(R.string.profile_select_interface);
-		}
-		
 		if (m_domain.equals("")) {
 			return getString(R.string.profile_enter_domain);
 		}		
@@ -116,7 +104,6 @@ public class TunnelPreferences extends PreferenceActivity {
 	
 	private void saveProperties() {
 		m_profile.setDomainName(m_domain);
-		m_profile.setInterface(Interfaces.valueOf(m_interface));
 		m_profile.setPassword(m_password);
 		if (m_new) {
 			m_profile.setName(m_name);
@@ -131,7 +118,6 @@ public class TunnelPreferences extends PreferenceActivity {
 	
 	private boolean profileChanged() {
 		return !m_domain.equals(m_profile.getDomainName()) ||
-		!m_interface.equals(m_profile.getInterface().toString()) ||
 		!m_password.equals(m_profile.getPassword()) ||
 		!m_name.equals(m_profile.getName());
 	}
@@ -146,10 +132,7 @@ public class TunnelPreferences extends PreferenceActivity {
 
 		m_prefName = createNamePreference();
 		screen.addPreference(m_prefName);
-		
-		m_prefInterface = createInterfacePreference();
-		screen.addPreference(m_prefInterface);
-		
+				
 		m_prefDomain = createDomainPreference();
 		screen.addPreference(m_prefDomain);
 		
@@ -176,38 +159,7 @@ public class TunnelPreferences extends PreferenceActivity {
 		});
 		return prefName;
 	}
-	
-	private String getInterfaceSummary(Preference preference, Interfaces key) {
-		CharSequence [] seq = ((ListPreference)preference).getEntryValues();
-		CharSequence [] val = ((ListPreference)preference).getEntries();
-		int i=0;
-		for (CharSequence s:seq) {
-			if (s.toString().equals(key.toString())) {
-				return val[i].toString();
-			}
-			++i;
-		}
-		return "";
-	}
-	
-	private ListPreference createInterfacePreference() {
-		ListPreference prefInterface = new ListPreference(this);
-		prefInterface.setTitle(R.string.network_interface);
-		prefInterface.setEntries(R.array.interface_list);
-		prefInterface.setEntryValues(R.array.interface_list_values);
-		prefInterface.setDialogTitle(R.string.network_interface);
-		prefInterface.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {			
-			@Override
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				m_interface = (String)newValue;
-				preference.setSummary(getInterfaceSummary(preference, Interfaces.valueOf(m_interface)));
-				return true;
-			}
-		});
-
-		return prefInterface;
-	}
-	
+		
 	private EditTextPreference createDomainPreference() {
 		EditTextPreference prefDomain = new EditTextPreference(this);
 		prefDomain.setTitle(R.string.domain_name);

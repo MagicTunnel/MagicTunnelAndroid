@@ -8,7 +8,6 @@ import android.preference.PreferenceManager;
 public class Profile implements Comparable<Profile> {
 	public static final String PROFILE_PREFIX = "profile_";
 	public static final String PROFILE_TYPE = "_type";
-	public static final String PROFILE_INTERFACE = "_interface";
 	public static final String PROFILE_DOMAIN = "_domain";
 	public static final String PROFILE_PASSWORD = "_password";
 	
@@ -16,7 +15,6 @@ public class Profile implements Comparable<Profile> {
 	
 	private String m_name;
 	private String m_type;
-	private Interfaces m_interface;
 	private String m_domainName;
 	private String m_password;
 	
@@ -30,14 +28,6 @@ public class Profile implements Comparable<Profile> {
 	
 	public void setName(String name) {
 		m_name = name;
-	}
-	
-	public Interfaces getInterface() {
-		return m_interface;
-	}
-	
-	public void setInterface(Interfaces iface) {
-		m_interface = iface;
 	}
 	
 	public String getDomainName() {
@@ -79,8 +69,6 @@ public class Profile implements Comparable<Profile> {
 		}
 		
 		
-		String iface = prefs.getString(prefixedName + PROFILE_INTERFACE,  Interfaces.CELLULAR.toString());
-		prof.m_interface = Interfaces.valueOf(iface);
 		prof.m_domainName = prefs.getString(prefixedName + PROFILE_DOMAIN, "");
 		prof.m_password = prefs.getString(prefixedName + PROFILE_PASSWORD, "");
 		return prof;
@@ -91,7 +79,6 @@ public class Profile implements Comparable<Profile> {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 		Editor edit = prefs.edit();
 		edit.putString(prefixedName + PROFILE_TYPE, m_type);
-		edit.putString(prefixedName + PROFILE_INTERFACE, m_interface.name());
 		edit.putString(prefixedName + PROFILE_DOMAIN, m_domainName);
 		edit.putString(prefixedName + PROFILE_PASSWORD, m_password);
 		edit.commit();
@@ -102,7 +89,6 @@ public class Profile implements Comparable<Profile> {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 		Editor edit = prefs.edit();
 		edit.remove(prefixedName + PROFILE_TYPE);
-		edit.remove(prefixedName + PROFILE_INTERFACE);
 		edit.remove(prefixedName + PROFILE_DOMAIN);
 		edit.remove(prefixedName + PROFILE_PASSWORD);
 		edit.commit();

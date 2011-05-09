@@ -1,6 +1,5 @@
 package net.magictunnel.core;
 
-import net.magictunnel.settings.Interfaces;
 import net.magictunnel.settings.Profile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -34,16 +33,11 @@ public class ConnectivityListener {
 	      @Override
 	      public void onDataConnectionStateChanged(int state) {
 	        Profile p = m_iodine.getActiveProfile();
-	    	  if (p == null) {
+	    	if (p == null) {
 	        	m_iodine.resetSavedRoutes();
 	        	return;
 	        }
-	    	if (state == TelephonyManager.DATA_DISCONNECTED) {
-	        	if (p.getInterface().equals(Interfaces.CELLULAR)) {
-	        		m_iodine.resetSavedRoutes();
-	        		m_iodine.disconnect();
-	        	}
-	        }
+	    	m_iodine.resetSavedRoutes();
 	      }
 	    };
 	    m_telephonyManager.listen(m_phoneStatelistener, PhoneStateListener.LISTEN_DATA_CONNECTION_STATE);
@@ -66,10 +60,8 @@ public class ConnectivityListener {
 		        	m_iodine.resetSavedRoutes();
 		        	return;
 		        }
-		        if (p.getInterface().equals(Interfaces.WIFI)) {
-		        	m_iodine.resetSavedRoutes();
-		        	m_iodine.disconnect();
-	        	}				
+	        	m_iodine.resetSavedRoutes();
+	        	m_iodine.disconnect();
 			}
 		};
 		
