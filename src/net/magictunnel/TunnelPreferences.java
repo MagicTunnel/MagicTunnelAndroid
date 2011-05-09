@@ -26,9 +26,9 @@ public class TunnelPreferences extends PreferenceActivity {
 
     private static final int CONFIRM_DIALOG_ID = 0;
 
-	private String m_name;
-	private String m_domain;
-	private String m_password;
+	private String m_name="";
+	private String m_domain="";
+	private String m_password="";
     
 	private EditTextPreference m_prefName;
 	private EditTextPreference m_prefDomain;
@@ -213,9 +213,7 @@ public class TunnelPreferences extends PreferenceActivity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK:
-                if (validateAndSaveResult()) 
-                	finish();
-                return true;
+            	return doCancel();
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -231,6 +229,15 @@ public class TunnelPreferences extends PreferenceActivity {
     	return true;
 	}
 	
+	public boolean doCancel() {
+        if (profileChanged()) {
+        	showDialog(CONFIRM_DIALOG_ID);
+        } else {
+            finish();
+        }
+        return true;
+	}
+	
 	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -240,12 +247,7 @@ public class TunnelPreferences extends PreferenceActivity {
                 return true;
 
             case MENU_CANCEL:
-                if (profileChanged()) {
-                	showDialog(CONFIRM_DIALOG_ID);
-                } else {
-                    finish();
-                }
-                return true;
+                return doCancel();
         }
         return super.onOptionsItemSelected(item);
     }
