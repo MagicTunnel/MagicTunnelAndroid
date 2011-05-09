@@ -86,6 +86,7 @@
     Check the log for more information.</string>
     <string name="iodine_enable_mobile">Please activate the mobile connection</string>
     <string name="iodine_enable_wifi">Please activate the Wifi connection</string>
+	<string name="iodine_enable_wifi_or_mobile">Please activate the mobile or Wifi connection</string>
     <string name="iodine_notify_connected">DNS tunnel established</string>
     <string name="iodine_notify_disconnected">DNS tunnel disconnected</string>
     

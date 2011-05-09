@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 import net.magictunnel.MagicTunnel;
 import net.magictunnel.R;
 import net.magictunnel.Utils;
-import net.magictunnel.settings.Interfaces;
 import net.magictunnel.settings.Profile;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -258,22 +257,16 @@ public class Iodine {
 		}
 
 		private String getActiveInterface() {
-			if (m_profile.getInterface().equals(Interfaces.CELLULAR)) {
-				return NetworkUtils.getMobileInterface(m_context);
-			}else {
-				return NetworkUtils.getWifiInterface(m_context);
-			}
+			return NetworkUtils.getDefaultRouteIface();
 		}
 
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
-			Interfaces iface = m_profile.getInterface();
 			
-			if (!NetworkUtils.checkConnectivity(m_context, iface)) {
+			if (!NetworkUtils.checkConnectivity(m_context)) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
-						iface.equals(Interfaces.WIFI) ?
-						R.string.iodine_enable_wifi:R.string.iodine_enable_mobile);
+						R.string.iodine_enable_wifi_or_mobile);
 				cancel(true);
 				return;
 			}

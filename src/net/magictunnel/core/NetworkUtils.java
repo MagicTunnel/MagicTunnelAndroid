@@ -299,7 +299,18 @@ public class NetworkUtils {
 	 * @param ctx
 	 * @return
 	 */
+	@Deprecated
 	public static String getMobileInterface(Context ctx) {
+		List<RouteEntry> routes = getRoutes();
+		RouteEntry re = getDefaultRoute(routes);
+		if (re == null) {
+			return null;
+		}
+		
+		return re.getIface();
+	}
+	
+	public static String getDefaultRouteIface() {
 		List<RouteEntry> routes = getRoutes();
 		RouteEntry re = getDefaultRoute(routes);
 		if (re == null) {
@@ -337,22 +348,22 @@ public class NetworkUtils {
 	 *
 	 * @return Whether WIFI or Data connection is enabled
 	 */
-	public static boolean checkConnectivity(Context ctx, Interfaces iface) {
+	public static boolean checkConnectivity(Context ctx) {
 		ConnectivityManager mgr = (ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo info;
-		int type=-1;
+		NetworkInfo infoWifi, infoMobile;
 
-		if (iface.equals(Interfaces.WIFI)) {
-			type = ConnectivityManager.TYPE_WIFI;
-		}else if (iface.equals(Interfaces.CELLULAR)) {
-			type = ConnectivityManager.TYPE_MOBILE;
-		}else {
-			return false;
+		infoWifi = mgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		if (infoWifi != null) {
+			if (infoWifi.isConnected()) {
+				return true;
+			}
 		}
 
-		info = mgr.getNetworkInfo(type);
-		if (info != null) {
-			return info.isConnected();
+		infoMobile = mgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+		if (infoMobile != null) {
+			if (infoMobile.isConnected()) {
+				return true;
+			}
 		}
 
 		return false;
