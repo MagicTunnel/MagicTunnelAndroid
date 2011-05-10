@@ -30,7 +30,7 @@ public class TunnelListPreferences extends PreferenceActivity implements
 		ITunnelStatusListener {
 	private static final int MENU_LOG = Menu.FIRST;
 	private static final int MENU_DONATE = Menu.FIRST + 1;
-	private static final int MENU_HELP = Menu.FIRST + 2;
+	private static final int MENU_ABOUT = Menu.FIRST + 2;
 
 	private static final int CONFIRM_DELETE_DIALOG_ID = 0;
 	private int m_firstTunnelIndex = 0;
@@ -287,9 +287,7 @@ public class TunnelListPreferences extends PreferenceActivity implements
 		super.onCreateOptionsMenu(menu);
 		menu.add(0, MENU_LOG, 0, R.string.main_menu_log).setIcon(
 				android.R.drawable.ic_menu_info_details);
-		menu.add(0, MENU_DONATE, 0, R.string.main_menu_donate).setIcon(
-				android.R.drawable.star_big_on);
-		menu.add(0, MENU_HELP, 0, R.string.main_menu_help).setIcon(
+		menu.add(0, MENU_ABOUT, 0, R.string.main_menu_about).setIcon(
 				android.R.drawable.ic_menu_help);
 		return true;
 	}
@@ -297,27 +295,19 @@ public class TunnelListPreferences extends PreferenceActivity implements
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		Intent intent;
-		String url;
 		switch (item.getItemId()) {
 		case MENU_LOG:
 			intent = new Intent().setClass(TunnelListPreferences.this,
 					Log.class);
+			startActivity(intent);
 			break;
 
-		case MENU_DONATE:
-			url = getString(R.string.url_donate);
-			intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
-			break;
-
-		case MENU_HELP:
-			url = getString(R.string.url_help);
-			intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+		case MENU_ABOUT:
+			Utils.showAboutBox(this);
 			break;
 		default:
 			return false;
 		}
-
-		startActivity(intent);
 
 		return true;
 	}

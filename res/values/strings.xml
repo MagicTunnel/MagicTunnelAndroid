@@ -8,6 +8,7 @@
     <string name="systemcheck">System component check</string>
     <string name="help">Help</string>
     <string name="setuphelp">MagicTunnel Help</string>
+    <string name="about">About</string>
     <string name="delete">Delete</string>
     <string name="change_settings">Change settings</string>
     <string name="connect">Connect</string>
@@ -94,6 +95,7 @@
     <string name="main_menu_log">Connection Log</string>
     <string name="main_menu_donate">Donate</string>
     <string name="main_menu_help">Online Help</string>
+    <string name="main_menu_about">About...</string>
     
     <!-- Log activity -->
     <string name="log_header">This page shows the messages from the last connection attempt.
@@ -101,7 +103,13 @@
 	<string name="log_empty">The log is empty. Connect to a tunnel first.</string>
 	
 	<!-- Various URLS -->
+	<string name="url_main">http://www.magictunnel.net/</string>
 	<string name="url_help">http://www.magictunnel.net/</string>
 	<string name="url_setup_help">http://www.magictunnel.net/setup.php</string>
 	<string name="url_donate">http://www.magictunnel.net/donate.php</string>
+	
+	<!--  About box -->
+	<string name="about_license">MagicTunnel uses a customized iodine DNS tunneling client. 
+	Source code, licenses, and documentation available online.</string>
+	<string name="about_url">&lt;a href="http://www.magictunnel.net">http://www.magictunnel.net&lt;/a></string>
 </resources>

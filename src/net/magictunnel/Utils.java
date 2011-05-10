@@ -1,8 +1,12 @@
 package net.magictunnel;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
+import android.widget.TextView;
 
 public class Utils {
 	public static void showErrorMessage(Context c, String message) {
@@ -26,6 +30,15 @@ public class Utils {
 		b.create();
 		b.show();
     }
+	
+	public static void showAboutBox(Context c) {
+		Dialog dialog = new Dialog(c);
+		dialog.setContentView(R.layout.aboutbox);
+		TextView tv = (TextView)dialog.findViewById(R.id.about_url);
+		tv.setMovementMethod(LinkMovementMethod.getInstance());
+		tv.setText(Html.fromHtml(c.getString(R.string.about_url)));
+		dialog.show();
+	}
 
     private Utils() {
     	
