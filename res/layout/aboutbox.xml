@@ -3,8 +3,9 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="match_parent"
   android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_horizontal">
+    <ImageView android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/imageView1" android:src="@drawable/logo"></ImageView>
     <TextView android:id="@+id/textView1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MagicTunnel" android:textStyle="bold" android:textSize="30px" android:gravity="center" android:textColor="#FFFFFF"></TextView>
     <QuickContactBadge android:id="@+id/quickContactBadge1" android:layout_width="wrap_content" android:layout_height="wrap_content"></QuickContactBadge>
     <TextView android:id="@+id/textView2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/about_license" android:gravity="center" android:layout_marginTop="10px" android:textColor="#ffffff" android:textSize="14px"></TextView>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/url_main" android:layout_marginBottom="20px" android:textColor="#ffffff" android:layout_marginTop="30px" android:textSize="16px" android:id="@+id/about_url"></TextView>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/url_main" android:layout_marginBottom="20px" android:layout_marginTop="30px" android:textSize="16px" android:id="@+id/about_url" android:textColor="#ff0000"></TextView>
 </LinearLayout>

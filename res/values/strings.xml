@@ -111,5 +111,5 @@
 	<!--  About box -->
 	<string name="about_license">MagicTunnel uses a customized iodine DNS tunneling client. 
 	Source code, licenses, and documentation available online.</string>
-	<string name="about_url">&lt;a href="http://www.magictunnel.net">http://www.magictunnel.net&lt;/a></string>
+	<string name="about_url">http://www.magictunnel.net</string>
 </resources>
