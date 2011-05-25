@@ -83,11 +83,6 @@ public class NetworkUtils {
         return addRoute(interfaceName, dstStr, 0, gwStr) == 0;
     }
     
-    public static boolean addDefaultRoute(String interfaceName) {
-    	String cmd = "route add default dev " + interfaceName;
-    	Commands cmds = new Commands();
-    	return cmds.runCommandAsRootAndWait(cmd) == 0;
-    }
 	
 	/**
      * Add a host route.
@@ -133,6 +128,22 @@ public class NetworkUtils {
     	Commands cmds = new Commands();	
     	String cmd = "ip route flush table main";
     	cmds.runCommandAsRootAndWait(cmd);
+    }
+
+    public static int prefixLengthToMask(int length) {
+    	int mask = 0;
+    	for (int i=0; i<length; ++i) {
+    		mask |= (1<<(31-i));
+    	}
+
+    	//Swap the bytes
+    	int result = 0;
+    	result |= (mask >>> 24) & 0xFF;
+    	result |= ((mask >>> 16) & 0xFF) << 8;
+    	result |= ((mask >>> 8) & 0xFF) << 16;
+    	result |= ((mask) & 0xFF) << 24;
+
+    	return result;
     }
     
     public static int maskToPrefixLength(int mask) {
@@ -196,7 +207,32 @@ public class NetworkUtils {
         }
         return result;
     }
-	
+
+	public static List<RouteEntry> getRoutes() {
+		List<RouteEntry> routes = new ArrayList<RouteEntry>();
+		Commands cmds = new Commands();
+		cmds.runCommandAsRoot("ip route");
+
+		String line;
+		BufferedReader in = new BufferedReader(new InputStreamReader(cmds.getProcess().getInputStream()));
+
+		final String ip =  "\\d+\\.\\d+.\\d+.\\d+";
+
+		try {
+			while ((line = in.readLine()) != null) {
+				//Get the destination
+				RouteEntry re = RouteEntry.fromIpRouteCommand(line);
+				if (re != null) {
+					routes.add(re);
+				}
+			}
+		} catch (IOException e) {
+
+		}
+		return routes;
+	}
+
+	/*
 	public static List<RouteEntry> getRoutes() {
 		List<RouteEntry> routes = new ArrayList<RouteEntry>();
 		Commands cmds = new Commands();
@@ -223,7 +259,7 @@ public class NetworkUtils {
 			
 		}
 		return routes;
-	}
+	}*/
 	
 	public static RouteEntry getDefaultRoute(List<RouteEntry> entries, String iface) {
 		for (RouteEntry e:entries) {
