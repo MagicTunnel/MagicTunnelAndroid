@@ -41,7 +41,8 @@ public class Iodine {
 	List<RouteEntry> m_savedRoutes;
 	
 	private StringBuffer m_log = new StringBuffer();
-	private Pattern m_rawPattern = Pattern.compile("directly to\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
+	private final Pattern m_rawPattern = Pattern.compile("directly to\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
+	private final Pattern m_tunnelIp = Pattern.compile("Server tunnel IP is\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
 	
 	private ArrayList<ITunnelStatusListener> m_listeners = new ArrayList<ITunnelStatusListener>(); 
 	
@@ -76,8 +77,10 @@ public class Iodine {
 	 * @param transportInterface is either wifi or cellular NIC.
 	 * @param tunnelEntry is the address where data gets tunneled (e.g., ISP's DNS server
 	 * or Iodine server in case of raw tunnel).
+	 * @param serverTunnelIp is the IP address of the tunnels server's endpoint (e.g., 192.168.123.3)
 	 */
-	public boolean setupRoute(String transportInterface, InetAddress tunnelEntry) {
+	public boolean setupRoute(String transportInterface, InetAddress tunnelEntry,
+			InetAddress serverTunnelIp) {
 		
 		NetworkInterface ni;
 		
@@ -102,7 +105,7 @@ public class Iodine {
 		
 		NetworkUtils.removeDefaultRoute(transportInterface);
 		NetworkUtils.addHostRoute(transportInterface, tunnelEntry, oldDefaultGateway);
-		NetworkUtils.addDefaultRoute("dns0");
+		NetworkUtils.addDefaultRoute("dns0", serverTunnelIp);
 		
 		return true;
 	}
@@ -114,15 +117,20 @@ public class Iodine {
 	 * @return
 	 */
 	public boolean setupRoute(String transportInterface) {
+		InetAddress serverTunnelIp = getServerTunnelIp(m_log);
+		if (serverTunnelIp == null) {
+			return false;
+		}
+
 		InetAddress raw = getRawEndpoint(m_log);
 		if (raw != null) {
-			return setupRoute(transportInterface, raw);
+			return setupRoute(transportInterface, raw, serverTunnelIp);
 		}else {
 			InetAddress dnsIspServer = NetworkUtils.getDns();
 			if (dnsIspServer == null) {
 				return false;
 			}
-			return setupRoute(transportInterface, dnsIspServer);
+			return setupRoute(transportInterface, dnsIspServer, serverTunnelIp);
 		}
 	}
 	
@@ -131,8 +139,8 @@ public class Iodine {
 	 * @param log
 	 * @return
 	 */
-	InetAddress getRawEndpoint(StringBuffer log) {
-		Matcher m = m_rawPattern.matcher(log.toString());
+	InetAddress extractIpFromLog(StringBuffer log, Pattern p) {
+		Matcher m = p.matcher(log.toString());
 
 		if (!m.find()) {
 			return null;
@@ -143,6 +151,14 @@ public class Iodine {
 		} catch (UnknownHostException e) {
 		}
 		return null;
+	}
+
+	InetAddress getRawEndpoint(StringBuffer log) {
+		return extractIpFromLog(log, m_rawPattern);
+	}
+
+	InetAddress getServerTunnelIp(StringBuffer log) {
+		return extractIpFromLog(log, m_tunnelIp);
 	}
 	
 	private StringBuilder buildCommandLine(Profile p) throws IodineException {
@@ -312,7 +328,7 @@ public class Iodine {
 			}
 			
 			String iface = getActiveInterface();
-			
+
 			if (!setupRoute(iface)) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
 						R.string.iodine_routing_error);
