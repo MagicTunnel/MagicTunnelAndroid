@@ -101,6 +101,7 @@
     <string name="log_header">This page shows the messages from the last connection attempt.
     You can use them to diagnose connectivity problems.</string>
 	<string name="log_empty">The log is empty. Connect to a tunnel first.</string>
+	<string name="log_copy">Copy log to clipboard</string>
 	
 	<!-- Various URLS -->
 	<string name="url_main">http://www.magictunnel.net/</string>
