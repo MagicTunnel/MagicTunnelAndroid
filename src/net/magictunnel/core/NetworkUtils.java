@@ -208,6 +208,21 @@ public class NetworkUtils {
         return result;
     }
 
+	public static void dumpRoutes(StringBuffer log) {
+		String line;
+		Commands cmds = new Commands();
+		cmds.runCommandAsRoot("ip route");
+		BufferedReader in = new BufferedReader(new InputStreamReader(cmds.getProcess().getInputStream()));
+
+		try {
+			while ((line = in.readLine()) != null) {
+				log.append(line+"\n");
+			}
+		} catch (IOException e) {
+
+		}
+	}
+
 	public static List<RouteEntry> getRoutes() {
 		List<RouteEntry> routes = new ArrayList<RouteEntry>();
 		Commands cmds = new Commands();

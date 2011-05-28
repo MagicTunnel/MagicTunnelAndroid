@@ -251,7 +251,6 @@ public class Iodine {
 		}
 		
 		private void launch() throws IodineException, InterruptedException {
-			publishProgress("Killing previous instance of iodine...");
 			m_cmds.runCommandAsRoot("killall -9 iodine > /dev/null");
 			Thread.sleep(500);
 
@@ -279,6 +278,12 @@ public class Iodine {
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
+
+			m_log = new StringBuffer();
+			m_log.append("====Routing table before\n");
+			NetworkUtils.dumpRoutes(m_log);
+			m_log.append("========================\n");
+
 			
 			if (!NetworkUtils.checkConnectivity(m_context)) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
@@ -295,12 +300,11 @@ public class Iodine {
 				return;
 			}
 
-			m_log = new StringBuffer();
 			m_progress = new ProgressDialog(m_context);
 			m_progress.setCancelable(false);
 			m_progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 			m_progress.setMessage("Connecting...");
-			m_progress.show();		
+			m_progress.show();
 		}
 	
 		@Override
@@ -321,6 +325,10 @@ public class Iodine {
 			super.onPostExecute(result);
 			m_progress.cancel();
 			
+			m_log.append("====Routing table after\n");
+			NetworkUtils.dumpRoutes(m_log);
+			m_log.append("========================\n");
+
 			if (!NetworkUtils.interfaceExists("dns0")) {
 				Utils.showErrorMessage(m_context, R.string.iodine_no_connectivity,
 						R.string.iodine_check_dns);
