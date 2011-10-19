@@ -12,10 +12,35 @@ public class Tunnel {
 	public static final String CONFIG = "/proc/config.gz";
 	
 	/**
+	 * Checks the presence of TAP device using various methods.
+	 * @return Whether the TAP device is present or not.
+	 */
+	public static boolean checkTap() {
+		if (checkTunDevice()) {
+			return true;
+		}
+
+		if (checkConfigGz()) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Looks for /dev/tun
+	 * @return if /dev/tun exists
+	 */
+	private static boolean checkTunDevice() {
+		File f = new File("/dev/tun");
+		return f.exists();
+	}
+
+	/**
 	 * Look for CONFIG_TUN=y or CONFIG_TUN=m in /proc/config.gz
 	 * @return
 	 */
-	public static boolean checkTap() {
+	public static boolean checkConfigGz() {
 		File proc = new File(CONFIG);
 		if (!proc.exists()) {
 			return false;
