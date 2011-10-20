@@ -4,5 +4,5 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent" android:orientation="vertical">
     <TextView android:id="@+id/textView1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/log_header" android:textStyle="bold"></TextView>
-    <TextView android:scrollbars = "vertical"  android:text="TextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/log_view"></TextView>
+    <TextView android:scrollbars = "vertical"  android:text="TextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/log_view" android:textColor="#FFFFFF" android:cursorVisible="true"></TextView>
 </LinearLayout>
