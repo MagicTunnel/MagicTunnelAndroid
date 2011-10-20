@@ -3,115 +3,161 @@ package net.magictunnel.core;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 
-import android.util.Log;
-
+/**
+ * Utility class for issuing system commands.
+ * @author Vitaly
+ *
+ */
 public class Commands {
-	public static final String SU = "su";
-	public static final String PATH = "PATH";
+    /** The command to get root access. */
+    public static final String SU = "su";
 
-	Runtime m_runtime = Runtime.getRuntime();
-	StringBuilder m_stdOut = new StringBuilder();
-	StringBuilder m_stdErr = new StringBuilder();
-	OutputStreamWriter m_osw = null;
-	Process m_proc = null;
+    /** The PATH environment variable. */
+    public static final String PATH = "PATH";
 
-	public StringBuilder getStdOut() {
-		return m_stdOut;
-	}
+    /** Runtime. */
+    private Runtime mRuntime = Runtime.getRuntime();
 
-	public StringBuilder getStdErr() {
-		return m_stdErr;
-	}
+    /** Standard output. */
+    private StringBuilder mStdOut = new StringBuilder();
 
-	public Commands() {
+    /** Standard error output. */
+    private StringBuilder mStdErr = new StringBuilder();
 
-	}
+    /** Currently running process. */
+    private Process mProc = null;
 
-	public static boolean checkRoot() {
-		String paths = System.getenv(PATH);
-		String[] pathComponents = paths.split(":");
+    /**
+     *
+     * @return The standard output.
+     */
+    public final StringBuilder getStdOut() {
+        return mStdOut;
+    }
 
-		for (String path : pathComponents) {
-			File f = new File(path, SU);
-			if (f.exists()) {
-				return true;
-			}
-		}
-		return false;
-	}
+    /**
+     *
+     * @return The standard error output.
+     */
+    public final StringBuilder getStdErr() {
+        return mStdErr;
+    }
 
-	public static void runScriptAsRoot(String scriptFile) {
-		Commands cmds = new Commands();
-		cmds.runCommandAsRoot("sh " + scriptFile);
-	}
+    /**
+     * @return Whether or not the command to have
+     * root access is available.
+     */
+    public static boolean checkRoot() {
+        String paths = System.getenv(PATH);
+        String[] pathComponents = paths.split(":");
 
-	public void runCommand(String command) {
-		try {
-			m_proc = m_runtime.exec(command);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+        for (String path : pathComponents) {
+            File f = new File(path, SU);
+            if (f.exists()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	public void runCommandAsRoot(String command) {
+    /**
+     * Run the given script file as root.
+     * @param scriptFile The script to run.
+     */
+    public static void runScriptAsRoot(final String scriptFile) {
+        Commands cmds = new Commands();
+        cmds.runCommandAsRoot("sh " + scriptFile);
+    }
 
-		try {
-			m_proc = m_runtime.exec("su");
-			m_osw = new OutputStreamWriter(m_proc.getOutputStream());
+    /**
+     * Execute the specified command.
+     * @param command The command to run.
+     */
+    public final void runCommand(final String command) {
+        try {
+            mProc = mRuntime.exec(command);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
-			m_osw.write(command);
-			m_osw.flush();
-			m_osw.close();
+    /**
+     * Execute the specified command as root.
+     * @param command The command to run.
+     */
+    public final void runCommandAsRoot(final String command) {
+        OutputStreamWriter osw = null;
 
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			if (m_osw != null) {
-				try {
-					m_osw.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	}
+        try {
+            mProc = mRuntime.exec("su");
+            osw = new OutputStreamWriter(mProc.getOutputStream());
 
-	public int runCommandAsRootAndWait(String command) {
-		runCommandAsRoot(command);
-    	try {
-			m_proc.waitFor();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-    	return m_proc.exitValue();
-	}
-	
-	public Process getProcess() {
-		return m_proc;
-	}
+            osw.write(command);
+            osw.flush();
+            osw.close();
 
-	public static boolean isProgramRunning(String name) {
-		Commands cmds = new Commands();
-		cmds.runCommandAsRoot("ps");
-		
-		BufferedReader in = new BufferedReader(new InputStreamReader(cmds.getProcess().getInputStream()));
-		try {
-			String l;
-			while ((l = in.readLine()) != null) {
-				if (l.contains(name)) {
-					return true;
-				}
-			}
-		}catch(Exception e) {
-			return false;
-		}
-		
-		return false;
-	}
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            if (osw != null) {
+                try {
+                    osw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * Run the command as root and wait for its termination.
+     * @param command The command to run.
+     * @return The status of the command.
+     */
+    public final int runCommandAsRootAndWait(final String command) {
+        runCommandAsRoot(command);
+        try {
+            mProc.waitFor();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return mProc.exitValue();
+    }
+
+    /**
+     * @return The currently running process.
+     */
+    public final Process getProcess() {
+        return mProc;
+    }
+
+    /**
+     * Checks whether the specified process is currently
+     * running on the system.
+     * @param name The name of the process.
+     * @return Whether the process is running or not.
+     */
+    public static boolean isProgramRunning(final String name) {
+        Commands cmds = new Commands();
+        cmds.runCommandAsRoot("ps");
+
+        BufferedReader in = new BufferedReader(
+                new InputStreamReader(cmds.getProcess().getInputStream()));
+        try {
+            String l;
+            while ((l = in.readLine()) != null) {
+                if (l.contains(name)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            return false;
+        }
+
+        return false;
+    }
 }

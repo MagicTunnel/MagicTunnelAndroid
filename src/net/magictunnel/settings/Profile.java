@@ -5,92 +5,169 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
 
+/**
+ * Gathers all profile settings and provides
+ * mechanisms to store these settings in the Android's
+ * configuration store.
+ *
+ * Profile configuration entries are of the form:
+ * profile_name_configuration
+ *
+ * For example: profile_mytunnel_domain.
+ * @author Vitaly
+ *
+ */
 public class Profile implements Comparable<Profile> {
-	public static final String PROFILE_PREFIX = "profile_";
-	public static final String PROFILE_TYPE = "_type";
-	public static final String PROFILE_DOMAIN = "_domain";
-	public static final String PROFILE_PASSWORD = "_password";
-	
-	public static final String PROFILE_TYPE_DNSTUNNEL = "dnstunnel";
-	
-	private String m_name;
-	private String m_type;
-	private String m_domainName;
-	private String m_password;
-	
-	public Profile() {
-		m_type = PROFILE_TYPE_DNSTUNNEL;
-	}
-	
-	public String getName() {
-		return m_name;
-	}
-	
-	public void setName(String name) {
-		m_name = name;
-	}
-	
-	public String getDomainName() {
-		return m_domainName;
-	}
-	
-	public void setDomainName(String name){
-		m_domainName = name;
-	}
-	
-	public String getPassword() {
-		return m_password;
-	}
-	
-	public void setPassword(String password) {
-		m_password = password;
-	}
+    /** Prefix for every profile entry. */
+    public static final String PROFILE_PREFIX = "profile_";
 
-	@Override
-	public int compareTo(Profile another) {
-		return m_name.compareTo(another.m_name);
-	}
-	
-	public static Profile retrieveProfile(Context ctx, String name) {
-		Profile prof = new Profile();
-		prof.m_name = name; 
-		
-		String prefixedName = PROFILE_PREFIX + name;
-		
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-		
-		if (!prefs.contains(prefixedName + PROFILE_TYPE)) {
-			return null;
-		}
-		
-		prof.m_type = prefs.getString(prefixedName + PROFILE_TYPE, "dnstunnel");
-		if (!prof.m_type.equals("dnstunnel")) {
-			return null;
-		}
-		
-		
-		prof.m_domainName = prefs.getString(prefixedName + PROFILE_DOMAIN, "");
-		prof.m_password = prefs.getString(prefixedName + PROFILE_PASSWORD, "");
-		return prof;
-	}
-	
-	public void saveProfile(Context ctx) {
-		String prefixedName = PROFILE_PREFIX + m_name;
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-		Editor edit = prefs.edit();
-		edit.putString(prefixedName + PROFILE_TYPE, m_type);
-		edit.putString(prefixedName + PROFILE_DOMAIN, m_domainName);
-		edit.putString(prefixedName + PROFILE_PASSWORD, m_password);
-		edit.commit();
-	}
-	
-	public void deleteProfile(Context ctx) {		
-		String prefixedName = PROFILE_PREFIX + m_name;
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-		Editor edit = prefs.edit();
-		edit.remove(prefixedName + PROFILE_TYPE);
-		edit.remove(prefixedName + PROFILE_DOMAIN);
-		edit.remove(prefixedName + PROFILE_PASSWORD);
-		edit.commit();
-	}
+    /** Type configuration suffix. */
+    public static final String PROFILE_TYPE = "_type";
+
+    /** Domain configuration suffix. */
+    public static final String PROFILE_DOMAIN = "_domain";
+
+    /** Password configuration suffix. */
+    public static final String PROFILE_PASSWORD = "_password";
+
+    /** The value of PROFILE_TYPE for DNS tunneling. */
+    public static final String PROFILE_TYPE_DNSTUNNEL = "dnstunnel";
+
+    /** Profile name. */
+    private String mName;
+
+    /** Profile type (e.g., PROFILE_TYPE_DNSTUNNEL). */
+    private String mType;
+
+    /** Domain name of the tunnel. */
+    private String mDomainName;
+
+    /** Password to access the tunnel. */
+    private String mPassword;
+
+    /**
+     * Creates a default DNS tunneling profile.
+     */
+    public Profile() {
+        mType = PROFILE_TYPE_DNSTUNNEL;
+    }
+
+    /**
+     * Get the name of the profile.
+     * @return The profile name.
+     */
+    public final String getName() {
+        return mName;
+    }
+
+    /**
+     * Set the name of the profile.
+     * @param name The profile name.
+     */
+    public final void setName(final String name) {
+        mName = name;
+    }
+
+    /**
+     * Get the domain name of the tunnel.
+     * @return The domain name.
+     */
+    public final String getDomainName() {
+        return mDomainName;
+    }
+
+    /**
+     * Set the tunnel's domain name.
+     * @param name The domain name.
+     */
+    public final void setDomainName(final String name) {
+        mDomainName = name;
+    }
+
+    /**
+     * Get the tunnel's password.
+     * @return The password.
+     */
+    public final String getPassword() {
+        return mPassword;
+    }
+
+    /**
+     * Set the tunnel password.
+     * @param password The password.
+     */
+    public final void setPassword(final String password) {
+        mPassword = password;
+    }
+
+    @Override
+    public final int compareTo(final Profile another) {
+        return mName.compareTo(another.mName);
+    }
+
+    /**
+     * Creates a Profile object from the data stored in
+     * the Android's configuration store.
+     * @param context The Android context where the configuration is stored.
+     * @param name The name of the configuration entry.
+     * @return The associated profile object.
+     */
+    public static Profile retrieveProfile(
+            final Context context,
+            final String name) {
+
+        Profile prof = new Profile();
+        prof.mName = name;
+
+        String prefixedName = PROFILE_PREFIX + name;
+
+        SharedPreferences prefs =
+            PreferenceManager.getDefaultSharedPreferences(context);
+
+        if (!prefs.contains(prefixedName + PROFILE_TYPE)) {
+            return null;
+        }
+
+        prof.mType = prefs.getString(prefixedName + PROFILE_TYPE, "dnstunnel");
+        if (!prof.mType.equals("dnstunnel")) {
+            return null;
+        }
+
+
+        prof.mDomainName = prefs.getString(prefixedName + PROFILE_DOMAIN, "");
+        prof.mPassword = prefs.getString(prefixedName + PROFILE_PASSWORD, "");
+        return prof;
+    }
+
+    /**
+     * Stores this profile into the Android's configuration store.
+     * @param context The Android context.
+     */
+    public final void saveProfile(final Context context) {
+        String prefixedName = PROFILE_PREFIX + mName;
+        SharedPreferences prefs =
+            PreferenceManager.getDefaultSharedPreferences(context);
+
+        Editor edit = prefs.edit();
+        edit.putString(prefixedName + PROFILE_TYPE, mType);
+        edit.putString(prefixedName + PROFILE_DOMAIN, mDomainName);
+        edit.putString(prefixedName + PROFILE_PASSWORD, mPassword);
+        edit.commit();
+    }
+
+    /**
+     * Removes all profile entries from the Android's configuration store.
+     * @param context The Android context.
+     */
+    public final void deleteProfile(final Context context) {
+        String prefixedName = PROFILE_PREFIX + mName;
+        SharedPreferences prefs =
+            PreferenceManager.getDefaultSharedPreferences(context);
+
+        Editor edit = prefs.edit();
+        edit.remove(prefixedName + PROFILE_TYPE);
+        edit.remove(prefixedName + PROFILE_DOMAIN);
+        edit.remove(prefixedName + PROFILE_PASSWORD);
+        edit.commit();
+    }
 }

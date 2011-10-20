@@ -7,6 +7,15 @@ package net.magictunnel.core;
  *
  */
 public interface ITunnelStatusListener {
-	public void onTunnelConnect(String name);
-	public void onTunnelDisconnet(String name);
+    /**
+     * Triggered when a tunnel is set up.
+     * @param name The name of the tunnel.
+     */
+    void onTunnelConnect(String name);
+
+    /**
+     * Triggered when a tunnel is disconnected.
+     * @param name The name of the tunnel.
+     */
+    void onTunnelDisconnect(String name);
 }

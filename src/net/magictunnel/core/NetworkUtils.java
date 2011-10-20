@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2008 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package net.magictunnel.core;
 
 import java.io.BufferedReader;
@@ -26,8 +10,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 
 import android.content.Context;
@@ -36,10 +18,31 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
-public class NetworkUtils {
-	private static final String TAG = "NetworkUtils";
+/**
+ * This class gathers network-related functions,
+ * such as getting/setting routes, checking connectivity, etc.
+ * @author Vitaly
+ *
+ */
+public final class NetworkUtils {
+    /** Logging tag. */
+    private static final String TAG = "NetworkUtils";
 
-	/**
+    /** Size of the host route prefix. */
+    private static final int HOST_ROUTE_PREFIX_IPV4 = 32;
+
+    /** Size of the host route prefix. */
+    private static final int HOST_ROUTE_PREFIX_IPV6 = 128;
+
+    /** Mask for extracting the lowest byte. */
+    private static final int BYTE_MASK = 0xFF;
+
+    /** This class is not supposed to be instantiated. */
+    private NetworkUtils() {
+
+    }
+
+    /**
      * Add a route to the routing table.
      *
      * @param interfaceName the interface to route through.
@@ -48,17 +51,21 @@ public class NetworkUtils {
      * @param prefixLength the prefix length of the route.
      * @param gw the gateway to use, e.g., "192.168.251.1". If null,
      * indicates a directly-connected route.
+     * @return the status code of the command.
      */
-    public static int addRoute(String interfaceName, String dst,
-          int prefixLength, String gw) {
-    	String cmd = "ip route add " + dst + "/" + prefixLength;
-    	if (gw != null) {
-    		cmd = cmd + " via " + gw;
-    	}
-    	cmd = cmd + " dev " + interfaceName;
-    	
-    	Commands cmds = new Commands();
-    	return cmds.runCommandAsRootAndWait(cmd);
+    public static int addRoute(
+            final String interfaceName,
+            final String dst,
+            final int prefixLength, final String gw) {
+
+        String cmd = "ip route add " + dst + "/" + prefixLength;
+        if (gw != null) {
+            cmd = cmd + " via " + gw;
+        }
+        cmd = cmd + " dev " + interfaceName;
+
+        Commands cmds = new Commands();
+        return cmds.runCommandAsRootAndWait(cmd);
     }
 
     /**
@@ -67,7 +74,9 @@ public class NetworkUtils {
      * @param gw the IP address of the gateway to which the route is desired,
      * @return {@code true} on success, {@code false} on failure
      */
-    public static boolean addDefaultRoute(String interfaceName, InetAddress gw) {
+    public static boolean addDefaultRoute(
+            final String interfaceName,
+            final InetAddress gw) {
         String dstStr;
         String gwStr = gw.getHostAddress();
 
@@ -76,15 +85,16 @@ public class NetworkUtils {
         } else if (gw instanceof Inet6Address) {
             dstStr = "::";
         } else {
-            Log.w(TAG, "addDefaultRoute failure: address is neither IPv4 nor IPv6" +
-                       "(" + gwStr + ")");
+            Log.w(TAG, "addDefaultRoute failure: "
+                    + "address is neither IPv4 nor IPv6"
+                    + "(" + gwStr + ")");
             return false;
         }
         return addRoute(interfaceName, dstStr, 0, gwStr) == 0;
     }
-    
-	
-	/**
+
+
+    /**
      * Add a host route.
      * @param interfaceName interface on which the route should be added
      * @param dst the IP address of the host to which the route is desired,
@@ -93,8 +103,11 @@ public class NetworkUtils {
      * if null, indicates a directly-connected route.
      * @return {@code true} on success, {@code false} on failure
      */
-    public static boolean addHostRoute(String interfaceName, InetAddress dst,
-          InetAddress gw) {
+    public static boolean addHostRoute(
+            final String interfaceName,
+            final InetAddress dst,
+            final InetAddress gw) {
+
         if (dst == null) {
             Log.w(TAG, "addHostRoute: dst should not be null");
             return false;
@@ -102,101 +115,141 @@ public class NetworkUtils {
 
         int prefixLength;
         String dstStr = dst.getHostAddress();
-        String gwStr = (gw != null) ? gw.getHostAddress() : null;
+        String gwStr = null;
+
+        if (gw != null) {
+            gwStr = gw.getHostAddress();
+        }
 
         if (dst instanceof Inet4Address) {
-            prefixLength = 32;
+            prefixLength = HOST_ROUTE_PREFIX_IPV4;
         } else if (dst instanceof Inet6Address) {
-            prefixLength = 128;
+            prefixLength = HOST_ROUTE_PREFIX_IPV6;
         } else {
-            Log.w(TAG, "addHostRoute failure: address is neither IPv4 nor IPv6" +
-                       "(" + dst + ")");
+            Log.w(TAG, "addHostRoute failure: "
+                    + "address is neither IPv4 nor IPv6"
+                    + "(" + dst + ")");
             return false;
         }
         return addRoute(interfaceName, dstStr, prefixLength, gwStr) == 0;
     }
 
-    /** Remove the default route for the named interface. */
-    public static int removeDefaultRoute(String interfaceName) {
-    	String cmd = "ip route delete default dev " + interfaceName;
-    	Commands cmds = new Commands();
-    	return cmds.runCommandAsRootAndWait(cmd);
-    	
+    /**
+     * Remove the default route for the named interface.
+     * @param interfaceName The name of the interface.
+     * @return the status of the command.
+     */
+    public static int removeDefaultRoute(final String interfaceName) {
+        String cmd = "ip route delete default dev " + interfaceName;
+        Commands cmds = new Commands();
+        return cmds.runCommandAsRootAndWait(cmd);
+
     }
-    
+
+    /**
+     * Delete all routes from the system.
+     */
     public static void removeAllRoutes() {
-    	Commands cmds = new Commands();	
-    	String cmd = "ip route flush table main";
-    	cmds.runCommandAsRootAndWait(cmd);
+        Commands cmds = new Commands();
+        String cmd = "ip route flush table main";
+        cmds.runCommandAsRootAndWait(cmd);
     }
 
-    public static int prefixLengthToMask(int length) {
-    	int mask = 0;
-    	for (int i=0; i<length; ++i) {
-    		mask |= (1<<(31-i));
-    	}
+    /**
+     * Converts a prefix length to a network mask.
+     * For example, 24 would return 255.255.255.0.
+     * @param length The prefix length.
+     * @return The network mask.
+     */
+    public static int prefixLengthToMask(final int length) {
+        int mask = 0;
+        for (int i = 0; i < length; ++i) {
+            mask |= (1 << ((HOST_ROUTE_PREFIX_IPV4 - 1) - i));
+        }
 
-    	//Swap the bytes
-    	int result = 0;
-    	result |= (mask >>> 24) & 0xFF;
-    	result |= ((mask >>> 16) & 0xFF) << 8;
-    	result |= ((mask >>> 8) & 0xFF) << 16;
-    	result |= ((mask) & 0xFF) << 24;
+        //Swap the bytes
+        int result = 0;
+        result |= (mask >>> 24) & BYTE_MASK;
+        result |= ((mask >>> 16) & BYTE_MASK) << 8;
+        result |= ((mask >>> 8) & BYTE_MASK) << 16;
+        result |= ((mask) & BYTE_MASK) << 24;
 
-    	return result;
-    }
-    
-    public static int maskToPrefixLength(int mask) {
-    	int length = 0;
-    	while (mask != 0) {
-    		if ((mask & 1) != 0) {
-    			length++;
-    		}
-    		mask = mask >>> 1;
-    	}
-    	return length;
-    }
-    
-    public static void restoreRoutes(List<RouteEntry> routes) {
-    	for (RouteEntry re:routes) {
-    		String dst = intToInetAddress(re.getDestination()).getHostAddress();
-    		String gw = null;
-    		if (re.getGateway() != 0) {
-    			gw = intToInetAddress(re.getGateway()).getHostAddress();
-    		}
-    		
-    		addRoute(re.getIface(), dst, maskToPrefixLength(re.getMask()), gw);    		
-    	}
+        return result;
     }
 
-    
-	/**
+    /**
+     * Transforms a mask into a prefix length.
+     * @param subnetMask The mask
+     * @return The prefix length
+     */
+    public static int maskToPrefixLength(final int subnetMask) {
+        int mask = subnetMask;
+        int length = 0;
+        while (mask != 0) {
+            if ((mask & 1) != 0) {
+                length++;
+            }
+            mask = mask >>> 1;
+        }
+        return length;
+    }
+
+    /**
+     * Activate the specified routes.
+     * @param routes The list of routes to add.
+     */
+    public static void restoreRoutes(final List<RouteEntry> routes) {
+        for (RouteEntry re : routes) {
+            String dst = intToInetAddress(re.getDestination()).getHostAddress();
+            String gw = null;
+            if (re.getGateway() != 0) {
+                gw = intToInetAddress(re.getGateway()).getHostAddress();
+            }
+
+            addRoute(re.getInterfaceName(), dst,
+                    maskToPrefixLength(re.getMask()), gw);
+        }
+    }
+
+
+    /**
      * Convert a IPv4 address from an integer to an InetAddress.
-     * @param hostAddr is an Int corresponding to the IPv4 address in network byte order
+     * @param hostAddress is an Int corresponding to the IPv4
+     * address in network byte order
      * @return the IP address as an {@code InetAddress}, returns null if
      * unable to convert or if the int is an invalid address.
      */
-    public static InetAddress intToInetAddress(int hostAddress) {
+    public static InetAddress intToInetAddress(final int hostAddress) {
         InetAddress inetAddress;
-        byte[] addressBytes = { (byte)(0xff & hostAddress),
-                                (byte)(0xff & (hostAddress >> 8)),
-                                (byte)(0xff & (hostAddress >> 16)),
-                                (byte)(0xff & (hostAddress >> 24)) };
+        byte[] addressBytes = { (byte)(BYTE_MASK & hostAddress),
+                (byte)(BYTE_MASK & (hostAddress >> 8)),
+                (byte)(BYTE_MASK & (hostAddress >> 16)),
+                (byte)(BYTE_MASK & (hostAddress >> 24)) };
 
         try {
-           inetAddress = InetAddress.getByAddress(addressBytes);
-        } catch(UnknownHostException e) {
-           return null;
+            inetAddress = InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            return null;
         }
 
         return inetAddress;
     }
 
-	
-	public static int v4StringToInt(String str) {
+
+    /**
+     * Converts a string representation of an IPv4 address
+     * into the equivalent integer.
+     * @param str The string IP address.
+     * @return The 32-bits address.
+     */
+    public static int v4StringToInt(final String str) {
         int result = 0;
         String[] array = str.split("\\.");
-        if (array.length != 4) return 0;
+
+        if (array.length != 4) {
+            return 0;
+        }
+
         try {
             result = Integer.parseInt(array[3]);
             result = (result << 8) + Integer.parseInt(array[2]);
@@ -208,192 +261,189 @@ public class NetworkUtils {
         return result;
     }
 
-	public static void dumpRoutes(StringBuffer log) {
-		String line;
-		Commands cmds = new Commands();
-		cmds.runCommandAsRoot("ip route");
-		BufferedReader in = new BufferedReader(new InputStreamReader(cmds.getProcess().getInputStream()));
 
-		try {
-			while ((line = in.readLine()) != null) {
-				log.append(line+"\n");
-			}
-		} catch (IOException e) {
+    
 
-		}
-	}
+    /**
+     * For the given interface name, look for the default route
+     * in the list of routes.
+     * @param entries The list of routes.
+     * @param iface The insterface name.
+     * @return The default route, if it exists.
+     */
+    public static RouteEntry getDefaultRoute(
+            final List<RouteEntry> entries,
+            final String iface) {
 
-	public static List<RouteEntry> getRoutes() {
-		List<RouteEntry> routes = new ArrayList<RouteEntry>();
-		Commands cmds = new Commands();
-		cmds.runCommandAsRoot("ip route");
+        for (RouteEntry e : entries) {
+            if (e.getDestination() == 0 && iface.equals(e.getInterfaceName())) {
+                return e;
+            }
+        }
+        return null;
+    }
 
-		String line;
-		BufferedReader in = new BufferedReader(new InputStreamReader(cmds.getProcess().getInputStream()));
+    /**
+     * Get the system-wide default route.
+     * @param entries The list of routes.
+     * @return The default route, if it exists.
+     */
+    public static RouteEntry getDefaultRoute(final List<RouteEntry> entries) {
+        for (RouteEntry e : entries) {
+            if (e.getDestination() == 0) {
+                return e;
+            }
+        }
+        return null;
+    }
 
-		final String ip =  "\\d+\\.\\d+.\\d+.\\d+";
+    /**
+     * XXX: find other standard ways of doing it.
+     * @return The DNS server address.
+     */
+    public static InetAddress getDns() {
+        String cmd = "getprop net.dns1";
 
-		try {
-			while ((line = in.readLine()) != null) {
-				//Get the destination
-				RouteEntry re = RouteEntry.fromIpRouteCommand(line);
-				if (re != null) {
-					routes.add(re);
-				}
-			}
-		} catch (IOException e) {
+        Commands cmds = new Commands();
+        cmds.runCommandAsRoot(cmd);
+        Process p = cmds.getProcess();
 
-		}
-		return routes;
-	}
+        String line;
+        BufferedReader in =
+            new BufferedReader(new InputStreamReader(p.getInputStream()));
 
-	/*
-	public static List<RouteEntry> getRoutes() {
-		List<RouteEntry> routes = new ArrayList<RouteEntry>();
-		Commands cmds = new Commands();
-		cmds.runCommandAsRoot("netstat -nrt");
-		
-		String line;
-		BufferedReader in = new BufferedReader(new InputStreamReader(cmds.getProcess().getInputStream()));
-		
-		try {
-			while ((line = in.readLine()) != null) {
-				final String ip =  "\\d+\\.\\d+.\\d+.\\d+";
-				String [] data = line.split("\\s+");
-				if (data.length < 8 || !data[0].matches(ip)) {
-					continue;
-				}
-				RouteEntry re = new RouteEntry();
-				re.destination = v4StringToInt(data[0]);
-				re.gateway = v4StringToInt(data[1]);
-				re.mask = v4StringToInt(data[2]);
-				re.iface = data[7];
-				routes.add(re);
-			}
-		} catch (IOException e) {
-			
-		}
-		return routes;
-	}*/
-	
-	public static RouteEntry getDefaultRoute(List<RouteEntry> entries, String iface) {
-		for (RouteEntry e:entries) {
-			if (e.getDestination() == 0 && iface.equals(e.getIface())) {
-				return e;
-			}
-		}
-		return null;
-	}
-	
-	public static RouteEntry getDefaultRoute(List<RouteEntry> entries) {
-		for (RouteEntry e:entries) {
-			if (e.getDestination() == 0) {
-				return e;
-			}
-		}
-		return null;
-	}
-	
-	/**
-	 * XXX: find other standard ways of doing it.
-	 * @return
-	 */
-	public static InetAddress getDns() {
-		String cmd = "getprop net.dns1";
+        try {
+            line = in.readLine();
+            return InetAddress.getByName(line);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
-		Commands cmds = new Commands();
-    	cmds.runCommandAsRoot(cmd);
-    	Process p = cmds.getProcess();
+    /**
+     * Find the interface name of the Wifi interface.
+     * @param ctx The Android context.
+     * @return The name of the Wifi interface.
+     */
+    public static String getWifiInterface(final Context ctx) {
+        //Get the ip of the Wifi interface
+        WifiManager wifi =
+            (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
 
-		String line;
-		BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		try {
-			line = in.readLine();
-			return InetAddress.getByName(line);
-		} catch (Exception e) {
+        int ip = wifi.getConnectionInfo().getIpAddress();
+        if (ip == 0) {
+            return null;
+        }
 
-		}
-		return null;
-		
-	}
-	
-	public static String getWifiInterface(Context ctx) {
-		//Get the ip of the Wifi interface
-		WifiManager wifi = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
-		int ip = wifi.getConnectionInfo().getIpAddress();
-		if (ip == 0) {
-			return null;
-		}
-		
-		InetAddress addr = intToInetAddress(ip);
-		NetworkInterface ni;
-		try {
-			ni = NetworkInterface.getByInetAddress(addr);
-			return ni.getName();
-		} catch (SocketException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public static String getDefaultRouteIface() {
-		List<RouteEntry> routes = getRoutes();
-		RouteEntry re = getDefaultRoute(routes);
-		if (re == null) {
-			return null;
-		}
-		
-		return re.getIface();
-	}
-	
-	public static boolean interfaceExists(String iface) {
-		try {
-			if (NetworkInterface.getByName(iface) != null) {
-				return true;
-			}
-		} catch (SocketException e) {
-		}
-		return false;
-	}
+        InetAddress addr = intToInetAddress(ip);
+        NetworkInterface ni;
+        try {
+            ni = NetworkInterface.getByInetAddress(addr);
+            return ni.getName();
+        } catch (SocketException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-	/**
-	 * Verifies that Internet is reachable
-	 * @param transportInterface
-	 * @return whether the default route on transportInterface exists
-	 */
-	public static boolean checkRoutes(String transportInterface) {
-		List<RouteEntry> routes = getRoutes();
-		RouteEntry oldDefaultRoute = getDefaultRoute(routes, transportInterface);
-		if (oldDefaultRoute == null) {
-			return false;
-		}
-		return true;
-	}
+    /**
+     * Retrieves all the network routes from the system.
+     * @return The list of routes.
+     */
+    public static List<RouteEntry> getRoutes() {
+        List<RouteEntry> routes = new ArrayList<RouteEntry>();
+        Commands cmds = new Commands();
+        cmds.runCommandAsRoot("ip route");
 
-	/**
-	 *
-	 * @return Whether WIFI or Data connection is enabled
-	 */
-	public static boolean checkConnectivity(Context ctx) {
-		ConnectivityManager mgr = (ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo infoWifi, infoMobile;
+        String line;
+        BufferedReader in = new BufferedReader(
+                new InputStreamReader(cmds.getProcess().getInputStream()));
 
-		infoWifi = mgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-		if (infoWifi != null) {
-			if (infoWifi.isConnected()) {
-				return true;
-			}
-		}
+        try {
+            while ((line = in.readLine()) != null) {
+                //Get the destination
+                RouteEntry re = RouteEntry.fromIpRouteCommand(line);
+                if (re != null) {
+                    routes.add(re);
+                }
+            }
+        } catch (IOException e) {
+            return routes;
+        }
+        return routes;
+    }
 
-		infoMobile = mgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-		if (infoMobile != null) {
-			if (infoMobile.isConnected()) {
-				return true;
-			}
-		}
+    /**
+     * Get the interface name associated with the default route.
+     * @return The interface name.
+     */
+    public static String getDefaultRouteIface() {
+        List<RouteEntry> routes = getRoutes();
+        RouteEntry re = getDefaultRoute(routes);
+        if (re == null) {
+            return null;
+        }
 
-		return false;
-	}
+        return re.getInterfaceName();
+    }
 
+    /**
+     * Check whether the specified interface exists.
+     * @param iface The name of the interface.
+     * @return true if the interface exists.
+     */
+    public static boolean interfaceExists(final String iface) {
+        boolean exists = false;
+        try {
+            exists = NetworkInterface.getByName(iface) != null;
+        } catch (SocketException e) {
+            return false;
+        }
+        return exists;
+    }
+
+    /**
+     * Verifies that Internet is reachable.
+     * @param interfaceName The name of the network interface.
+     * @return whether the default route on interfaceName exists
+     */
+    public static boolean checkRoutes(final String interfaceName) {
+        List<RouteEntry> routes = getRoutes();
+        RouteEntry oldDefaultRoute =
+            getDefaultRoute(routes, interfaceName);
+
+        if (oldDefaultRoute == null) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @param ctx The Android context.
+     * @return Whether WIFI or Data connection is enabled
+     */
+    public static boolean checkConnectivity(final Context ctx) {
+        ConnectivityManager mgr = (ConnectivityManager) ctx.getSystemService(
+                Context.CONNECTIVITY_SERVICE);
+
+
+        NetworkInfo infoWifi, infoMobile;
+
+        infoWifi = mgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if (infoWifi != null) {
+            if (infoWifi.isConnected()) {
+                return true;
+            }
+        }
+
+        infoMobile = mgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+        if (infoMobile != null) {
+            if (infoMobile.isConnected()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
