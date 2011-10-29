@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
 
 import net.magictunnel.R;
 import net.magictunnel.Utils;
+import net.magictunnel.settings.DnsProtocol;
+import net.magictunnel.settings.DnsRawConnection;
 import net.magictunnel.settings.Profile;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -258,6 +260,20 @@ public class Iodine {
         if (p.getPassword() != null) {
             cmdBuilder.append(" -P ");
             cmdBuilder.append(p.getPassword());
+        }
+
+        if (p.getPacketSize() > 0) {
+            cmdBuilder.append(" -m");
+            cmdBuilder.append(Integer.toString(p.getPacketSize()));
+        }
+
+        if (!p.getDnsProtocol().equals(DnsProtocol.AUTODETECT)) {
+            cmdBuilder.append(" -T");
+            cmdBuilder.append(p.getDnsProtocol().toString());
+        }
+
+        if (p.getRawConnection().equals(DnsRawConnection.NO)) {
+            cmdBuilder.append(" -r");
         }
 
         cmdBuilder.append(" -d dns0 ");
