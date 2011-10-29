@@ -13,14 +13,46 @@
     <string name="change_settings">Change settings</string>
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
-    
+    <string name="autodetect">Autodetect</string>
     
     <string name="tunnel_mgmt">Tunnel management</string>
     <string name="add_new_tunnel">Add new tunnel</string>
     <string name="available_tunnels">Available tunnels</string>
     <string name="connected_tunnel">Connected</string>
     
-    
+    <string-array name="direct_connection_values">
+        <item>Autodetect</item>
+        <item>Yes</item>
+        <item>No</item>
+    </string-array>
+
+    <string-array name="direct_connection_keys">
+        <item>AUTODETECT</item>
+        <item>YES</item>
+        <item>NO</item>
+    </string-array>
+
+
+    <string-array name="protocol_values">
+        <item>Autodetect</item>
+        <item>NULL</item>
+        <item>TXT</item>
+        <item>SRV</item>
+        <item>MX</item>
+        <item>CNAME</item>
+        <item>A</item>
+    </string-array>
+
+    <string-array name="protocol_keys">
+        <item>AUTODETECT</item>
+        <item>NULL</item>
+        <item>TXT</item>
+        <item>SRV</item>
+        <item>MX</item>
+        <item>CNAME</item>
+        <item>A</item>
+    </string-array>
+
     <string-array name="interface_list">
         <item>Cellular</item>
         <item>Wifi</item>        
@@ -44,12 +76,19 @@
     
     <string name="password">Password</string>
     
+    <string name="packet_size">Packet size</string>
+    <string name="raw_detection_title">Use direct connection to DNS tunnel server</string>
+    <string name="raw_detection_short">Use direct connection</string>
+    <string name="protocol_type">Protocol type</string>
+
+
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     
+
     <string name="profile_password_not_set">Password not set</string>
     <string name="profile_password_unchanged">Password not changed</string>
     <string name="profile_password_changed">Password set</string>

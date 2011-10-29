@@ -18,13 +18,19 @@
 
 package net.magictunnel;
 
+import java.util.ArrayList;
+
+import net.magictunnel.settings.DnsProtocol;
+import net.magictunnel.settings.DnsRawConnection;
 import net.magictunnel.settings.Profile;
 import net.magictunnel.settings.Settings;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
+import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
@@ -61,6 +67,26 @@ public class TunnelPreferences extends PreferenceActivity {
     /** The recorded password. */
     private String mPassword = "";
 
+    /**
+     * Packet size to use when transmitting queries.
+     * Zero for auto-detection.
+     */
+    private int mPacketSize = 0;
+
+    /**
+     * Speed up connection by skipping the detection
+     * of whether it is possible to connect to the DNS
+     * server directly. Since most of the time it is not
+     * possible, this option speeds up connection.
+     */
+    private DnsRawConnection mDoRawConnectionDetection = DnsRawConnection.AUTODETECT;
+
+    /**
+     * Specifies which protocol to use for tunneling data
+     * over the DNS tunnel.
+     */
+    private DnsProtocol mDnsProtocol = DnsProtocol.AUTODETECT;
+
     /** The text box for the profile name. */
     private EditTextPreference mPrefName;
 
@@ -69,6 +95,15 @@ public class TunnelPreferences extends PreferenceActivity {
 
     /** The text box for the password. */
     private EditTextPreference mPrefPassword;
+
+    /** The text box for maximum packet size. */
+    private EditTextPreference mPrefMaxPacketSize;
+
+    /** The list for raw connection detection. */
+    private ListPreference mPrefDoRawDetection;
+
+    /** The list of supported protocols. */
+    private ListPreference mPrefDnsProtocol;
 
     /** Specifies whether the profile being edited already exists or not. */
     private boolean mNew;
@@ -107,14 +142,17 @@ public class TunnelPreferences extends PreferenceActivity {
             throw new RuntimeException("Could not retrive profile");
         }
 
+        /********************/
         mName = prof.getName();
         mPrefName.getEditText().setText(prof.getName());
         mPrefName.setSummary(prof.getName());
 
+        /********************/
         mDomain = prof.getDomainName();
         mPrefDomain.getEditText().setText(prof.getDomainName());
         mPrefDomain.setSummary(prof.getDomainName());
 
+        /********************/
         mPassword = prof.getPassword();
         mPrefPassword.getEditText().setText(prof.getPassword());
 
@@ -127,6 +165,29 @@ public class TunnelPreferences extends PreferenceActivity {
             mPrefPassword.getEditText()
             .setHint(R.string.profile_password_unchanged);
         }
+
+        /********************/
+        mPacketSize = prof.getPacketSize();
+        mPrefMaxPacketSize.getEditText().setText(Integer.toString(mPacketSize));
+
+        if (mPacketSize == 0) {
+            mPrefMaxPacketSize.setSummary(R.string.autodetect);
+        } else {
+            mPrefMaxPacketSize.setSummary(Integer.toString(mPacketSize) + " bytes");
+        }
+
+        /********************/
+        mDoRawConnectionDetection = prof.getRawConnection();
+        mPrefDoRawDetection.setValue(mDoRawConnectionDetection.toString());
+        String summary = mapListKeyToValue(mPrefDoRawDetection, mDoRawConnectionDetection.toString());
+        mPrefDoRawDetection.setSummary(summary);
+
+
+        /********************/
+        mDnsProtocol = prof.getDnsProtocol();
+        mPrefDnsProtocol.setValue(mDnsProtocol.toString());
+        summary = mapListKeyToValue(mPrefDnsProtocol, mDnsProtocol.toString());
+        mPrefDnsProtocol.setSummary(summary);
 
         mProfile = prof;
     }
@@ -150,6 +211,7 @@ public class TunnelPreferences extends PreferenceActivity {
         if (mDomain.equals("")) {
             return getString(R.string.profile_enter_domain);
         }
+
         return null;
     }
 
@@ -159,6 +221,10 @@ public class TunnelPreferences extends PreferenceActivity {
     private void saveProperties() {
         mProfile.setDomainName(mDomain);
         mProfile.setPassword(mPassword);
+        mProfile.setRawConnection(mDoRawConnectionDetection);
+        mProfile.setPacketSize(mPacketSize);
+        mProfile.setDnsProtocl(mDnsProtocol);
+
         if (mNew) {
             mProfile.setName(mName);
             mSettings.addProfile(mProfile);
@@ -177,7 +243,10 @@ public class TunnelPreferences extends PreferenceActivity {
     private boolean profileChanged() {
         return !mDomain.equals(mProfile.getDomainName())
         || !mPassword.equals(mProfile.getPassword())
-        || !mName.equals(mProfile.getName());
+        || !mName.equals(mProfile.getName())
+        || mPacketSize != mProfile.getPacketSize()
+        || !mDoRawConnectionDetection.equals(mProfile.getRawConnection())
+        || !mDnsProtocol.equals(mProfile.getDnsProtocol());
     }
 
     /**
@@ -202,6 +271,14 @@ public class TunnelPreferences extends PreferenceActivity {
         mPrefPassword.setSummary(R.string.profile_password_not_set);
         mPrefPassword.getEditText().setHint(R.string.profile_password_not_set);
 
+        mPrefDnsProtocol = createProtocolPreference();
+        screen.addPreference(mPrefDnsProtocol);
+
+        mPrefMaxPacketSize = createPacketSizePreference();
+        screen.addPreference(mPrefMaxPacketSize);
+
+        mPrefDoRawDetection = createConnectionDetectionPreference();
+        screen.addPreference(mPrefDoRawDetection);
     }
 
     /**
@@ -274,6 +351,117 @@ public class TunnelPreferences extends PreferenceActivity {
         });
 
         return prefPassword;
+    }
+
+    /**
+     * @return The packet size field.
+     */
+    private EditTextPreference createPacketSizePreference() {
+        EditTextPreference packetSizePreference = new EditTextPreference(this);
+
+        packetSizePreference.setTitle(R.string.packet_size);
+        packetSizePreference.setDialogTitle(R.string.packet_size);
+        packetSizePreference.getEditText().setInputType(
+                InputType.TYPE_CLASS_NUMBER);
+        packetSizePreference.setSummary(R.string.autodetect);
+
+        packetSizePreference.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(final Preference preference, final Object newValue) {
+                try {
+                    mPacketSize = Integer.parseInt((String) newValue);
+                } catch (NumberFormatException e) {
+                    mPacketSize = 0;
+                }
+
+                if (mPacketSize == 0) {
+                    mPrefMaxPacketSize.setSummary(R.string.autodetect);
+                } else {
+                    mPrefMaxPacketSize.setSummary(Integer.toString(mPacketSize) + " bytes");
+                }
+                return true;
+            }
+        });
+
+        return packetSizePreference;
+    }
+
+    /**
+     * Maps a key to a displayable value.
+     * @param pref The preference list.
+     * @param key The key corresponding to the value we want.
+     * @return The value.
+     */
+    private static String mapListKeyToValue(ListPreference pref, String key) {
+        CharSequence[] entryValues = pref.getEntryValues();
+        for (int index = 0; index < entryValues.length; ++index) {
+            if (entryValues[index].toString().equals(key)) {
+                return pref.getEntries()[index].toString();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return The raw connection detection check box.
+     */
+    private ListPreference createConnectionDetectionPreference() {
+        ListPreference detectionPreference = new ListPreference(this);
+
+        detectionPreference.setTitle(R.string.raw_detection_short);
+        detectionPreference.setDialogTitle(R.string.raw_detection_title);
+
+        detectionPreference.setEntries(R.array.direct_connection_values);
+        detectionPreference.setEntryValues(R.array.direct_connection_keys);
+
+        String summary = mapListKeyToValue(detectionPreference, mDoRawConnectionDetection.toString());
+        detectionPreference.setSummary(summary);
+
+        detectionPreference.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(final Preference preference, final Object newValue) {
+                ListPreference listPref = (ListPreference) preference;
+                CharSequence value = (CharSequence) newValue;
+                mDoRawConnectionDetection = DnsRawConnection.valueOf(value.toString());
+
+                String summary = mapListKeyToValue(listPref, value.toString());
+                preference.setSummary(summary);
+                return true;
+            }
+        });
+
+        return detectionPreference;
+    }
+
+    /**
+     * @return The raw connection detection check box.
+     */
+    private ListPreference createProtocolPreference() {
+        ListPreference protocolPreference = new ListPreference(this);
+
+        protocolPreference.setTitle(R.string.protocol_type);
+        protocolPreference.setDialogTitle(R.string.protocol_type);
+
+        protocolPreference.setEntries(R.array.protocol_values);
+        protocolPreference.setEntryValues(R.array.protocol_keys);
+
+        String summary = mapListKeyToValue(protocolPreference, mDnsProtocol.toString());
+        protocolPreference.setSummary(summary);
+
+        protocolPreference.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(final Preference preference, final Object newValue) {
+                ListPreference listPref = (ListPreference) preference;
+                CharSequence value = (CharSequence) newValue;
+                mDnsProtocol = DnsProtocol.valueOf(value.toString());
+
+                String summary = mapListKeyToValue(listPref, value.toString());
+                preference.setSummary(summary);
+                return true;
+            }
+        });
+
+        return protocolPreference;
     }
 
     @Override

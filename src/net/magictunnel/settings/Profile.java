@@ -48,6 +48,15 @@ public class Profile implements Comparable<Profile> {
     /** Password configuration suffix. */
     public static final String PROFILE_PASSWORD = "_password";
 
+    /** Packet size configuration suffix. */
+    public static final String PROFILE_MAX_PACKET_SIZE = "_packet_size";
+
+    /** Packet size configuration suffix. */
+    public static final String PROFILE_DO_RAW_DETECTION = "_raw_detection";
+
+    /** Tunnel encoding type configuration suffix. */
+    public static final String PROFILE_ENCODING_TYPE = "_encoding";
+
     /** The value of PROFILE_TYPE for DNS tunneling. */
     public static final String PROFILE_TYPE_DNSTUNNEL = "dnstunnel";
 
@@ -55,7 +64,7 @@ public class Profile implements Comparable<Profile> {
     private String mName;
 
     /** Profile type (e.g., PROFILE_TYPE_DNSTUNNEL). */
-    private String mType;
+    private String mType = PROFILE_TYPE_DNSTUNNEL;
 
     /** Domain name of the tunnel. */
     private String mDomainName;
@@ -64,10 +73,30 @@ public class Profile implements Comparable<Profile> {
     private String mPassword;
 
     /**
+     * Packet size to use when transmitting queries.
+     * Zero for auto-detection.
+     */
+    private int mPacketSize = 0;
+
+    /**
+     * Speed up connection by skipping the detection
+     * of whether it is possible to connect to the DNS
+     * server directly. Since most of the time it is not
+     * possible, this option speeds up connection.
+     */
+    private DnsRawConnection mRawConnection = DnsRawConnection.AUTODETECT;
+
+    /**
+     * Specifies which protocol to use for tunneling data
+     * over the DNS tunnel.
+     */
+    private DnsProtocol mDnsProtocol = DnsProtocol.AUTODETECT;
+
+    /**
      * Creates a default DNS tunneling profile.
      */
     public Profile() {
-        mType = PROFILE_TYPE_DNSTUNNEL;
+
     }
 
     /**
@@ -118,6 +147,58 @@ public class Profile implements Comparable<Profile> {
         mPassword = password;
     }
 
+    /**
+     * Set the maximum size of DNS packets.
+     * @param packetSize The packet size
+     */
+    public final void setPacketSize(final int packetSize) {
+        mPacketSize = packetSize;
+
+        if (mPacketSize < 0) {
+            mPacketSize = 0;
+        }
+    }
+
+    /**
+     * Get the current maximum packet size.
+     * @return The packet size.
+     */
+    public final int getPacketSize() {
+        return mPacketSize;
+    }
+
+    /**
+     * Set raw connection detection.
+     * @param b Whether to perform detection or not.
+     */
+    public final void setRawConnection(final DnsRawConnection b) {
+        mRawConnection = b;
+    }
+
+    /**
+     *
+     * @return Whether to perform raw detection or not.
+     */
+    public final DnsRawConnection getRawConnection() {
+        return mRawConnection;
+    }
+
+    /**
+     *
+     * @return Which protocol is currently used for encoding.
+     */
+    public final DnsProtocol getDnsProtocol() {
+        return mDnsProtocol;
+    }
+
+    /**
+     * Set the tunnel protocol.
+     * @param protocol The protocol.
+     */
+    public final void setDnsProtocl(final DnsProtocol protocol) {
+        mDnsProtocol = protocol;
+    }
+
     @Override
     public final int compareTo(final Profile another) {
         return mName.compareTo(another.mName);
@@ -154,6 +235,14 @@ public class Profile implements Comparable<Profile> {
 
         prof.mDomainName = prefs.getString(prefixedName + PROFILE_DOMAIN, "");
         prof.mPassword = prefs.getString(prefixedName + PROFILE_PASSWORD, "");
+        prof.mPacketSize = prefs.getInt(prefixedName + PROFILE_MAX_PACKET_SIZE, 0);
+        prof.mRawConnection = DnsRawConnection.valueOf(prefs.getString(
+                prefixedName + PROFILE_DO_RAW_DETECTION,
+                DnsRawConnection.AUTODETECT.toString()));
+
+        prof.mDnsProtocol = DnsProtocol.valueOf(prefs.getString(
+                prefixedName + PROFILE_ENCODING_TYPE,
+                DnsProtocol.AUTODETECT.toString()));
         return prof;
     }
 
@@ -170,6 +259,9 @@ public class Profile implements Comparable<Profile> {
         edit.putString(prefixedName + PROFILE_TYPE, mType);
         edit.putString(prefixedName + PROFILE_DOMAIN, mDomainName);
         edit.putString(prefixedName + PROFILE_PASSWORD, mPassword);
+        edit.putString(prefixedName + PROFILE_ENCODING_TYPE, mDnsProtocol.toString());
+        edit.putInt(prefixedName + PROFILE_MAX_PACKET_SIZE, mPacketSize);
+        edit.putString(prefixedName + PROFILE_DO_RAW_DETECTION, mRawConnection.toString());
         edit.commit();
     }
 
@@ -186,6 +278,9 @@ public class Profile implements Comparable<Profile> {
         edit.remove(prefixedName + PROFILE_TYPE);
         edit.remove(prefixedName + PROFILE_DOMAIN);
         edit.remove(prefixedName + PROFILE_PASSWORD);
+        edit.remove(prefixedName + PROFILE_ENCODING_TYPE);
+        edit.remove(prefixedName + PROFILE_MAX_PACKET_SIZE);
+        edit.remove(prefixedName + PROFILE_DO_RAW_DETECTION);
         edit.commit();
     }
 }
