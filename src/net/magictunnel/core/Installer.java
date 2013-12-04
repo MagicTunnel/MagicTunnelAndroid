@@ -143,7 +143,7 @@ public class Installer {
             script.println("cp " + absSource.toString() + " " + dest);
 
             //Add executable permission
-            script.println("chmod +x " + dest);
+            script.println("chmod 700 " + dest);
 
             //Remount read-only
             mountCommand = p.remountPartition(partition, true);
