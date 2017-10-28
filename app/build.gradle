@@ -17,6 +17,28 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    externalNativeBuild {
+        cmake {
+            path '../../iodine/src/CMakeLists.txt'
+        }
+    }
+
+    productFlavors {
+        universal {
+            ndk {
+                abiFilters 'mips', 'mips64', 'x86', 'x86_64', 'armeabi', 'armeabi-v7a', 'arm64-v8a'
+            }
+        }
+    }
+
+    // If you want Gradle to package prebuilt native libraries
+    // with your APK, modify the default source set configuration
+    // to include the directory of your prebuilt .so files as follows.
+    sourceSets {
+        main {
+            jniLibs.srcDirs '../../iodine/src/libiodine'
+        }
+    }
 }
 
 dependencies {
